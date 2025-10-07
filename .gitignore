@@ -1,0 +1,32 @@
+# Thư mục do Unity tạo ra và thường bị bỏ qua
+/Library/
+/Temp/
+/Obj/
+/Builds/
+/Logs/
+/UserSettings/  # Thường chứa các cài đặt cá nhân của user
+
+# File dự án và Solution của IDE (sẽ được Unity/IDE tạo lại)
+# (Visual Studio / Rider)
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+.vs/
+.vscode/
+
+# Build files (Windows)
+*.exe
+*.dll
+*.mdb
+*.pdb
+
+# Thư mục hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Nếu bạn sử dụng Burst AOT Compilation
+/Assets/Managed/
+/Assets/PackageCache/
