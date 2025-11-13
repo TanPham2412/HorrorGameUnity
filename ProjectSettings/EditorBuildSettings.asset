@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/MainMenu_Scene.unity
+    guid: 8dc20fa4933d05c448c16f7621963f48
+  - enabled: 0
+    path: Assets/Scenes/Scene_TruongHoc_Dem1.unity
+    guid: bf1f392aa733db04da3d6cb2396bad84
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
