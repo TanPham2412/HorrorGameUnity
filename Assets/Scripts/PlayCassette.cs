@@ -1,0 +1,88 @@
+﻿using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.Video;
+using UnityEngine.InputSystem; 
+
+public class PlayCassette : MonoBehaviour
+{
+    public float TheDistance;
+    public GameObject ActionDisplay;
+    public GameObject ActionText;
+    public GameObject NoCassetteText; // Text hiển thị khi không có cassette
+    public GameObject ExtraCross;
+    public VideoPlayer videoPlayer;
+    public GameObject fullScreenVideoUI; // Kéo FullScreenVideo (Raw Image) vào đây
+    public MonoBehaviour playerMovementScript; // Kéo SCRIPT điều khiển nhân vật vào đây
+    public GameObject crosshair; // Kéo crosshair UI vào đây (nếu có)
+
+    private bool isPlaying = false; // Đang phát video
+
+    void Update()
+    {
+        if (!isPlaying)
+        {
+            TheDistance = PlayerCasting.DistanceFromTarget;
+        }
+    }
+
+    void OnMouseOver()
+    {
+        if (TheDistance <= 3 && !isPlaying)
+        {
+            // Debug: Kiểm tra giá trị hasVHSTape
+            Debug.Log("hasVHSTape = " + GlobalInventory.hasVHSTape);
+            
+            // Kiểm tra xem có VHSTape không
+            if (GlobalInventory.hasVHSTape)
+            {
+                ActionDisplay.SetActive(true);
+                ActionText.SetActive(true);
+                ExtraCross.SetActive(true);
+            }
+            else
+            {
+                NoCassetteText.SetActive(true);
+            }
+        }
+        else
+        {
+            ExtraCross.SetActive(false);
+            ActionDisplay.SetActive(false);
+            ActionText.SetActive(false);
+            NoCassetteText.SetActive(false);
+        }
+
+        // Cho phép xem lại nhiều lần nếu vẫn còn băng
+        if (Input.GetKeyDown(KeyCode.E) && TheDistance <= 3 && !isPlaying && GlobalInventory.hasVHSTape)
+        {
+            ExtraCross.SetActive(false);
+            ActionDisplay.SetActive(false);
+            ActionText.SetActive(false);
+            StartCoroutine(PlayCutscene());
+        }
+    }
+
+    void OnMouseExit()
+    {
+        ExtraCross.SetActive(false);
+        ActionDisplay.SetActive(false);
+        ActionText.SetActive(false);
+        NoCassetteText.SetActive(false);
+    }
+
+    IEnumerator PlayCutscene()
+    {
+        isPlaying = true;
+        playerMovementScript.enabled = false;
+        if (crosshair != null) crosshair.SetActive(false);
+        fullScreenVideoUI.SetActive(true);
+        videoPlayer.Play();
+        yield return new WaitForSeconds((float)videoPlayer.clip.length);
+        videoPlayer.Stop();
+        fullScreenVideoUI.SetActive(false);
+        playerMovementScript.enabled = true;
+        if (crosshair != null) crosshair.SetActive(true);
+        isPlaying = false;
+    }
+}
