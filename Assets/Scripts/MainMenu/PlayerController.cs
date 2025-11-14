@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
     public float rotateSpeed = 10.0f;   // Tốc độ xoay (cần nhanh hơn để xoay mượt)
 
     [Header("Tài sản")]
-    public Light flashlight;
+    public GameObject flashlightObject; // FlashLightReal GameObject
 
     private CharacterController controller;
     private Animator animator;
@@ -23,6 +23,12 @@ public class PlayerController : MonoBehaviour
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
         cameraMainTransform = Camera.main.transform; // Tự động tìm camera chính
+        
+        // Ẩn flashlight lúc bắt đầu
+        if (flashlightObject != null)
+        {
+            flashlightObject.SetActive(false);
+        }
     }
 
     void Update()
@@ -33,7 +39,7 @@ public class PlayerController : MonoBehaviour
         // --- 2. XỬ LÝ DI CHUYỂN & XOAY (Đã tối ưu hóa) ---
         HandleMovementAndRotation();
 
-        // --- 3. XỬ LÝ ĐÈN PIN (PHÍM F) ---
+        // --- 3. XỦ LÝ ĐÈN PIN (PHÍM L) ---
         HandleFlashlight();
     }
 
@@ -87,9 +93,11 @@ public class PlayerController : MonoBehaviour
 
     void HandleFlashlight()
     {
-        if (flashlight != null && Input.GetKeyDown(KeyCode.F))
+        // Chỉ cho phép bật/tắt đèn khi đã nhặt flashlight
+        if (flashlightObject != null && Input.GetKeyDown(KeyCode.L) && GlobalInventory.hasFlashlight)
         {
-            flashlight.enabled = !flashlight.enabled;
+            // Bật/tắt cả GameObject (bao gồm model và ánh sáng)
+            flashlightObject.SetActive(!flashlightObject.activeSelf);
         }
     }
 }

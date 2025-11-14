@@ -6,7 +6,9 @@ using UnityEngine.UI;
 public enum ItemType
 {
     Key,
-    VHSTape
+    GuardKey,
+    VHSTape,
+    Flashlight
 }
 
 public class PickUpItem : MonoBehaviour
@@ -18,6 +20,7 @@ public class PickUpItem : MonoBehaviour
     public float TheDistance;
     public GameObject ActionDisplay;
     public GameObject ActionText;
+    public GameObject NameObject;
     public GameObject ExtraCross;
     
     [Header("Item Objects")]
@@ -29,8 +32,8 @@ public class PickUpItem : MonoBehaviour
     {
         TheDistance = PlayerCasting.DistanceFromTarget;
 
-        // Check for drop input based on item type
-        if (Input.GetKeyDown(KeyCode.Q) && HasItem())
+        // Check for drop input based on item type (KHÔNG cho phép vứt flashlight)
+        if (Input.GetKeyDown(KeyCode.Q) && HasItem() && itemType != ItemType.Flashlight)
         {
             DropItem();
         }
@@ -38,9 +41,16 @@ public class PickUpItem : MonoBehaviour
 
     void OnMouseOver()
     {
+        // Nếu là flashlight nhưng chưa được phép nhặt thì không hiện UI, không cho nhặt
+        if (itemType == ItemType.Flashlight && !GlobalInventory.canPickupFlashlight)
+        {
+            return;
+        }
+
         if (TheDistance <= 3)
         {
             ActionDisplay.SetActive(true);
+            NameObject.SetActive(true);
             ActionText.SetActive(true);
             ExtraCross.SetActive(true);
         }
@@ -58,6 +68,7 @@ public class PickUpItem : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
     }
     
     private bool HasItem()
@@ -66,8 +77,12 @@ public class PickUpItem : MonoBehaviour
         {
             case ItemType.Key:
                 return GlobalInventory.hasKey;
+            case ItemType.GuardKey:
+                return GlobalInventory.hasGuardKey;
             case ItemType.VHSTape:
                 return GlobalInventory.hasVHSTape;
+            case ItemType.Flashlight:
+                return GlobalInventory.hasFlashlight;
             default:
                 return false;
         }
@@ -80,8 +95,14 @@ public class PickUpItem : MonoBehaviour
             case ItemType.Key:
                 GlobalInventory.hasKey = status;
                 break;
+            case ItemType.GuardKey:
+                GlobalInventory.hasGuardKey = status;
+                break;
             case ItemType.VHSTape:
                 GlobalInventory.hasVHSTape = status;
+                break;
+            case ItemType.Flashlight:
+                GlobalInventory.hasFlashlight = status;
                 break;
         }
     }
@@ -95,12 +116,13 @@ public class PickUpItem : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
         FakeItem.SetActive(false);
         RealItem.SetActive(true);
         SetItemStatus(true);
         
         // Debug log
-        Debug.Log("Picked up: " + itemType + ", hasVHSTape = " + GlobalInventory.hasVHSTape);
+        Debug.Log("Picked up: " + itemType + ", hasKey = " + GlobalInventory.hasKey + ", hasGuardKey = " + GlobalInventory.hasGuardKey + ", hasVHSTape = " + GlobalInventory.hasVHSTape + ", hasFlashlight = " + GlobalInventory.hasFlashlight);
     }
     
     private void DropItem()
@@ -109,6 +131,7 @@ public class PickUpItem : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
 
         // Tách item ra khỏi parent để nó không bị đi theo tủ nữa
         transform.SetParent(null);
