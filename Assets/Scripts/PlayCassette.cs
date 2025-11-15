@@ -10,6 +10,7 @@ public class PlayCassette : MonoBehaviour
     public float TheDistance;
     public GameObject ActionDisplay;
     public GameObject ActionText;
+    public GameObject NameObject;
     public GameObject NoCassetteText; // Text hiển thị khi không có cassette
     public GameObject ExtraCross;
     public VideoPlayer videoPlayer;
@@ -45,9 +46,10 @@ public class PlayCassette : MonoBehaviour
     {
         if (TheDistance <= 3 && !isPlaying)
         {
+
             // Debug: Kiểm tra giá trị hasVHSTape
             Debug.Log("hasVHSTape = " + GlobalInventory.hasVHSTape);
-            
+            NameObject.SetActive(true);
             // Kiểm tra xem có VHSTape không
             if (GlobalInventory.hasVHSTape)
             {
@@ -62,6 +64,7 @@ public class PlayCassette : MonoBehaviour
         }
         else
         {
+            NameObject.SetActive(false);
             ExtraCross.SetActive(false);
             ActionDisplay.SetActive(false);
             ActionText.SetActive(false);
@@ -80,6 +83,7 @@ public class PlayCassette : MonoBehaviour
 
     void OnMouseExit()
     {
+        NameObject.SetActive(false);
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
