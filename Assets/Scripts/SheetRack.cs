@@ -9,6 +9,7 @@ public class SheetRack : MonoBehaviour
     public GameObject ActionText;
     public GameObject ActionText2;
     public GameObject Door;
+    public GameObject NameObject;
     public AudioSource DoorCreakSound;
     private bool doorIsOpen = false;
     public GameObject ExtraCross;
@@ -21,6 +22,7 @@ public class SheetRack : MonoBehaviour
     {
         if (TheDistance <= 3)
         {
+            NameObject.SetActive(true);
             ActionDisplay.SetActive(true);
             ExtraCross.SetActive(true);
             if (doorIsOpen == false)
@@ -34,6 +36,7 @@ public class SheetRack : MonoBehaviour
         }
         else
         {
+            NameObject.SetActive(false);
             ExtraCross.SetActive(false);
             ActionDisplay.SetActive(false);
             ActionText.SetActive(false);
@@ -57,6 +60,7 @@ public class SheetRack : MonoBehaviour
 
     void OnMouseExit()
     {
+        NameObject.SetActive(false);
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);

@@ -33,7 +33,7 @@ public class PickUpItem : MonoBehaviour
         TheDistance = PlayerCasting.DistanceFromTarget;
 
         // Check for drop input based on item type (KHÔNG cho phép vứt flashlight)
-        if (Input.GetKeyDown(KeyCode.Q) && HasItem() && itemType != ItemType.Flashlight)
+        if (Input.GetKeyDown(KeyCode.Q) && GlobalInventory.HasSpecificItem(itemType) && itemType != ItemType.Flashlight)
         {
             DropItem();
         }
@@ -90,25 +90,35 @@ public class PickUpItem : MonoBehaviour
     
     private void SetItemStatus(bool status)
     {
-        switch (itemType)
+        // This method is now handled by GlobalInventory.SetCurrentItem() and GlobalInventory.ClearCurrentItem()
+        // Kept for legacy compatibility if needed
+        if (status)
         {
-            case ItemType.Key:
-                GlobalInventory.hasKey = status;
-                break;
-            case ItemType.GuardKey:
-                GlobalInventory.hasGuardKey = status;
-                break;
-            case ItemType.VHSTape:
-                GlobalInventory.hasVHSTape = status;
-                break;
-            case ItemType.Flashlight:
-                GlobalInventory.hasFlashlight = status;
-                break;
+            GlobalInventory.SetCurrentItem(itemType, this);
+        }
+        else
+        {
+            GlobalInventory.ClearCurrentItem(itemType);
         }
     }
     
     private void PickUpItemAction()
     {
+        // Handle two-slot inventory system
+        if (itemType == ItemType.Flashlight)
+        {
+            // Flashlight has its own slot, no need to drop anything
+        }
+        else
+        {
+            // For regular items (Key, GuardKey, VHSTape), check if regular slot is occupied
+            if (GlobalInventory.HasRegularItem())
+            {
+                // Drop the currently held regular item before picking up the new one
+                DropCurrentlyHeldRegularItem();
+            }
+        }
+
         // Tách item ra khỏi parent (cái tủ)
         transform.SetParent(null);
 
@@ -119,10 +129,12 @@ public class PickUpItem : MonoBehaviour
         NameObject.SetActive(false);
         FakeItem.SetActive(false);
         RealItem.SetActive(true);
-        SetItemStatus(true);
+        
+        // Use new inventory system
+        GlobalInventory.SetCurrentItem(itemType, this);
         
         // Debug log
-        Debug.Log("Picked up: " + itemType + ", hasKey = " + GlobalInventory.hasKey + ", hasGuardKey = " + GlobalInventory.hasGuardKey + ", hasVHSTape = " + GlobalInventory.hasVHSTape + ", hasFlashlight = " + GlobalInventory.hasFlashlight);
+        Debug.Log("Picked up: " + itemType + ", Regular item: " + GlobalInventory.currentRegularItem + ", Has flashlight: " + GlobalInventory.hasFlashlight);
     }
     
     private void DropItem()
@@ -143,6 +155,16 @@ public class PickUpItem : MonoBehaviour
 
         FakeItem.SetActive(true);
         RealItem.SetActive(false);
-        SetItemStatus(false);
+        
+        // Use new inventory system
+        GlobalInventory.ClearCurrentItem(itemType);
+    }
+    
+    private void DropCurrentlyHeldRegularItem()
+    {
+        if (GlobalInventory.GetCurrentRegularItemScript() != null)
+        {
+            GlobalInventory.GetCurrentRegularItemScript().DropItem();
+        }
     }
 }
