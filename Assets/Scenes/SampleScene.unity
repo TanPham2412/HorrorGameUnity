@@ -2477,6 +2477,7 @@ MonoBehaviour:
   FakeItem: {fileID: 631991953}
   RealItem: {fileID: 759588138}
   Player: {fileID: 1962952914}
+  pickupDistance: 3
 --- !u!1 &429203155 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8604899632925990116, guid: beef3bcde1610f04aa96275436147bb9,
@@ -3597,6 +3598,7 @@ MonoBehaviour:
   FakeItem: {fileID: 1099417372}
   RealItem: {fileID: 114884680}
   Player: {fileID: 1962952914}
+  pickupDistance: 3
 --- !u!65 &595504102
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5264,6 +5266,7 @@ MonoBehaviour:
   FakeItem: {fileID: 1122687603}
   RealItem: {fileID: 114884680}
   Player: {fileID: 1962952914}
+  pickupDistance: 3
 --- !u!65 &768697599
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5466,7 +5469,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.05
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -6112,6 +6115,7 @@ MonoBehaviour:
   FakeItem: {fileID: 1844699264}
   RealItem: {fileID: 857461412}
   Player: {fileID: 1962952914}
+  pickupDistance: 3
 --- !u!65 &869208191
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8822,6 +8826,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalPosition.y
       value: 1.656
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393215578589016641, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8616685848737228371, guid: c5efc39a8aaf6e64ea40e9ad573e9b47,
         type: 3}

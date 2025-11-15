@@ -28,9 +28,20 @@ public class PickUpItem : MonoBehaviour
     public GameObject RealItem;
     public GameObject Player;
     
+    [Header("Pickup Settings")]
+    public float pickupDistance = 3f; // Khoảng cách tối đa để nhặt item
+    
+    private float actualDistanceToPlayer;
+    
     void Update()
     {
         TheDistance = PlayerCasting.DistanceFromTarget;
+        
+        // Tính khoảng cách thực tế từ player đến item
+        if (Player != null)
+        {
+            actualDistanceToPlayer = Vector3.Distance(Player.transform.position, transform.position);
+        }
 
         // Check for drop input based on item type (KHÔNG cho phép vứt flashlight)
         if (Input.GetKeyDown(KeyCode.Q) && GlobalInventory.HasSpecificItem(itemType) && itemType != ItemType.Flashlight)
@@ -47,7 +58,10 @@ public class PickUpItem : MonoBehaviour
             return;
         }
 
-        if (TheDistance <= 3)
+        // Sử dụng khoảng cách thực tế thay vì chỉ dựa vào raycast
+        bool isInRange = actualDistanceToPlayer <= pickupDistance;
+
+        if (isInRange)
         {
             ActionDisplay.SetActive(true);
             NameObject.SetActive(true);
@@ -56,7 +70,7 @@ public class PickUpItem : MonoBehaviour
         }
         if (Input.GetButtonDown("Action"))
         {
-            if (TheDistance <= 3)
+            if (isInRange)
             {
                 PickUpItemAction();
             }
@@ -149,7 +163,55 @@ public class PickUpItem : MonoBehaviour
         transform.SetParent(null);
         FakeItem.transform.SetParent(null);
 
-        Vector3 dropPos = Player.transform.position + Player.transform.forward * 0.5f;
+        // Thả vật phẩm xuống bề mặt ngay bên dưới vị trí tay cầm (RealItem)
+        Vector3 dropPos;
+        RaycastHit hit;
+        float surfaceOffset = 0.02f; // Đặt cách bề mặt một khoảng rất nhỏ
+
+        // Chọn điểm bắt đầu raycast: ưu tiên vị trí RealItem (vật đang cầm trên tay)
+        Vector3 origin;
+        if (RealItem != null)
+        {
+            origin = RealItem.transform.position + Vector3.up * 0.2f;
+        }
+        else if (Player != null)
+        {
+            origin = Player.transform.position + Vector3.up * 1.0f;
+        }
+        else
+        {
+            origin = transform.position + Vector3.up * 1.0f;
+        }
+
+        // 1. Raycast từ trên xuống để tìm bề mặt (bàn, tủ, sàn...)
+        if (Physics.Raycast(origin, Vector3.down, out hit, 5f))
+        {
+            dropPos = hit.point + Vector3.up * surfaceOffset;
+        }
+        else
+        {
+            // 2. Nếu không có bề mặt bên dưới tay, thả xuống sàn phía trước player
+            Vector3 forwardPos;
+            if (Player != null)
+            {
+                forwardPos = Player.transform.position + Player.transform.forward * 0.5f;
+            }
+            else
+            {
+                forwardPos = transform.position + transform.forward * 0.5f;
+            }
+
+            if (Physics.Raycast(forwardPos + Vector3.up * 2f, Vector3.down, out hit, 5f))
+            {
+                dropPos = hit.point + Vector3.up * surfaceOffset;
+            }
+            else
+            {
+                // 3. Fallback: đặt ở vị trí mặc định phía trước player
+                dropPos = forwardPos;
+            }
+        }
+
         transform.position = dropPos;
         FakeItem.transform.position = dropPos;
 
