@@ -31,6 +31,13 @@ public class PickUpItem : MonoBehaviour
     [Header("Pickup Settings")]
     public float pickupDistance = 3f; // Khoảng cách tối đa để nhặt item
     
+    [Header("Audio Settings")]
+    public AudioSource audioSource;
+    public AudioClip pickUpClip;
+    public AudioClip dropClip;
+    [Range(0f, 1f)] public float pickUpVolume = 1f;
+    [Range(0f, 1f)] public float dropVolume = 1f;
+    
     private float actualDistanceToPlayer;
     
     void Update()
@@ -146,12 +153,15 @@ public class PickUpItem : MonoBehaviour
         
         // Use new inventory system
         GlobalInventory.SetCurrentItem(itemType, this);
+
+        // Play pickup sound
+        PlayPickupSound();
         
         // Debug log
         Debug.Log("Picked up: " + itemType + ", Regular item: " + GlobalInventory.currentRegularItem + ", Has flashlight: " + GlobalInventory.hasFlashlight);
     }
     
-    private void DropItem()
+    private void DropItem(bool playDropSound = true)
     {
         this.GetComponent<BoxCollider>().enabled = true;
         ExtraCross.SetActive(false);
@@ -220,13 +230,36 @@ public class PickUpItem : MonoBehaviour
         
         // Use new inventory system
         GlobalInventory.ClearCurrentItem(itemType);
+
+        // Play drop sound only when requested (Q-drop)
+        if (playDropSound)
+        {
+            PlayDropSound();
+        }
     }
     
     private void DropCurrentlyHeldRegularItem()
     {
         if (GlobalInventory.GetCurrentRegularItemScript() != null)
         {
-            GlobalInventory.GetCurrentRegularItemScript().DropItem();
+            // Auto-drop when picking another item -> don't play drop sound here
+            GlobalInventory.GetCurrentRegularItemScript().DropItem(false);
+        }
+    }
+
+    private void PlayPickupSound()
+    {
+        if (audioSource != null && pickUpClip != null)
+        {
+            audioSource.PlayOneShot(pickUpClip, pickUpVolume);
+        }
+    }
+
+    private void PlayDropSound()
+    {
+        if (audioSource != null && dropClip != null)
+        {
+            audioSource.PlayOneShot(dropClip, dropVolume);
         }
     }
 }

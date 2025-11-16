@@ -20,8 +20,14 @@ public class PlayCassette : MonoBehaviour
     public GameObject TextBox; // Kéo TextBox UI vào đây để hiển thị text sau video
     public PickUpItem flashlightPickUp; // Kéo FlashLightTrigger (PickUpItem) vào đây
 
+    [Header("Audio Settings")]
+    public AudioSource breathingAudioSource; // Nên kéo AudioSource của nhân vật vào đây
+    public AudioClip breathingClip;          // Tệp âm thanh thở dốc
+    [Range(0f, 1f)] public float breathingVolume = 1f;
+
     private bool isPlaying = false; // Đang phát video
     private bool hasShownText = false; // Đã hiển thị text sau video chưa
+    private bool hasPlayedBreathing = false; // Đã phát tiếng thở dốc sau khi xem băng lần đầu
 
     void Start()
     {
@@ -104,6 +110,13 @@ public class PlayCassette : MonoBehaviour
         if (crosshair != null) crosshair.SetActive(true);
         isPlaying = false;
 
+        // Phát tiếng thở dốc sau khi xem xong băng (chỉ lần đầu)
+        if (!hasPlayedBreathing)
+        {
+            PlayBreathingSFX();
+            hasPlayedBreathing = true;
+        }
+
         // Sau khi xem xong video lần đầu: cho phép nhặt flashlight
         GlobalInventory.canPickupFlashlight = true;
         if (flashlightPickUp != null)
@@ -125,9 +138,19 @@ public class PlayCassette : MonoBehaviour
     {
         // Hiển thị text KHÔNG khóa player
         TextBox.SetActive(true);
-        TextBox.GetComponent<TextMeshProUGUI>().text = "Đoạn băng này thật kỳ quái. Tôi có dự cảm xấu. Không thể ở đây lâu. Chết tiệt, tối quá. Trước hết, phải tìm một cái đèn pin.";
-        yield return new WaitForSeconds(10f); // Hiển thị trong 10 giây
+        TextBox.GetComponent<TextMeshProUGUI>().text = "...Cái... cái quái gì vậy? Gã bảo vệ đó... ông ta thấy gì vậy? Tiếng cười đó... không phải con người.";
+        yield return new WaitForSeconds(5f); // Hiển thị trong 5 giây
+        TextBox.GetComponent<TextMeshProUGUI>().text = "Mình phải rời khỏi đây ngay lập tức. Không thể ở lại căn phòng này. Nơi này quá tối, mình cần phải tìm xem có cái ĐÈN PIN nào không và tìm thêm một vài MANH MỐI.";
+        yield return new WaitForSeconds(5f);
         TextBox.GetComponent<TextMeshProUGUI>().text = "";
         TextBox.SetActive(false);
+    }
+
+    private void PlayBreathingSFX()
+    {
+        if (breathingAudioSource != null && breathingClip != null)
+        {
+            breathingAudioSource.PlayOneShot(breathingClip, breathingVolume);
+        }
     }
 }
