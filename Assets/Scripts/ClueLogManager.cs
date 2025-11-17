@@ -30,8 +30,6 @@ public class ClueLogManager : MonoBehaviour
     private readonly List<string> monologues = new();
     private bool isOpen;
     private bool showingClues = true;
-    private CursorLockMode previousCursorLockMode;
-    private bool previousCursorVisible;
 
     void Awake()
     {
@@ -46,8 +44,6 @@ public class ClueLogManager : MonoBehaviour
     void Start()
     {
         if (logPanel != null) logPanel.SetActive(false);
-        cluesTabButton?.onClick.AddListener(() => ShowTab(true));
-        monologueTabButton?.onClick.AddListener(() => ShowTab(false));
         ShowTab(true);
     }
 
@@ -62,6 +58,18 @@ public class ClueLogManager : MonoBehaviour
         if (isOpen && Input.GetKeyDown(KeyCode.Escape))
         {
             CloseLog();
+        }
+
+        if (isOpen)
+        {
+            if (Input.GetKeyDown(KeyCode.LeftArrow) && !showingClues)
+            {
+                ShowCluesTab();
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow) && showingClues)
+            {
+                ShowMonologueTab();
+            }
         }
     }
 
@@ -146,13 +154,11 @@ public class ClueLogManager : MonoBehaviour
 
     public void ShowCluesTab()
     {
-        Debug.Log("ClueLogManager: CLICK Manh Moi tab");
         ShowTab(true);
     }
 
     public void ShowMonologueTab()
     {
-        Debug.Log("ClueLogManager: CLICK Loi Thoai tab");
         ShowTab(false);
     }
 
@@ -162,11 +168,6 @@ public class ClueLogManager : MonoBehaviour
         if (logPanel != null) logPanel.SetActive(true);
         if (playerMovementScript != null) playerMovementScript.enabled = false;
         if (crosshair != null) crosshair.SetActive(false);
-
-        previousCursorLockMode = Cursor.lockState;
-        previousCursorVisible = Cursor.visible;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
     }
 
     void CloseLog()
@@ -175,8 +176,5 @@ public class ClueLogManager : MonoBehaviour
         if (logPanel != null) logPanel.SetActive(false);
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         if (crosshair != null) crosshair.SetActive(true);
-
-        Cursor.lockState = previousCursorLockMode;
-        Cursor.visible = previousCursorVisible;
     }
 }
