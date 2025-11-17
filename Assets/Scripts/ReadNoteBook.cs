@@ -10,6 +10,7 @@ public class ReadNotebook : MonoBehaviour
     public GameObject ActionText;      // "Press E"
     public GameObject NameObject;      // "Notebook"
     public GameObject ExtraCross;      // crosshair phụ (nếu có)
+    public float interactionRange = 3f;
 
     [Header("Note UI")]
     public GameObject notePanel;       // Panel UI full màn hình
@@ -32,6 +33,7 @@ public class ReadNotebook : MonoBehaviour
     private bool isOpen = false;
     private bool hasRegisteredClue = false;
     private bool hasRegisteredMonologue = false;
+    private bool isPlayerLookingAtNotebook = false;
 
     void Start()
     {
@@ -47,49 +49,50 @@ public class ReadNotebook : MonoBehaviour
         // Cập nhật khoảng cách giống các script khác
         TheDistance = PlayerCasting.DistanceFromTarget;
 
-        // Nếu đang mở note, cho phép đóng lại
-        if (isOpen)
+        bool canInteract = isPlayerLookingAtNotebook && TheDistance <= interactionRange;
+
+        if (canInteract && Input.GetButtonDown("Action"))
         {
-            // CHỈ dùng phím Escape để đóng, tránh bị mở xong đóng ngay khi bấm E
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (isOpen)
             {
                 CloseNote();
             }
+            else
+            {
+                OpenNote();
+            }
+        }
+
+        if (isOpen && Input.GetKeyDown(KeyCode.Escape))
+        {
+            CloseNote();
         }
     }
 
     void OnMouseOver()
     {
-        if (TheDistance <= 3f && !isOpen)
-        {
-            NameObject.SetActive(true);
-            ActionDisplay.SetActive(true);
-            ActionText.SetActive(true);
-            ExtraCross.SetActive(true);
+        isPlayerLookingAtNotebook = true;
 
-            // Dùng Input.GetButtonDown("Action") giống PickUpItem
-            if (Input.GetButtonDown("Action"))
-            {
-                OpenNote();
-            }
-        }
-        else if (!isOpen)
+        if (!isOpen)
         {
-            ActionDisplay.SetActive(false);
-            ActionText.SetActive(false);
-            ExtraCross.SetActive(false);
-            NameObject.SetActive(false);
+            if (TheDistance <= interactionRange)
+            {
+                ShowInteractionPrompt();
+            }
+            else
+            {
+                HideInteractionPrompt();
+            }
         }
     }
 
     void OnMouseExit()
     {
+        isPlayerLookingAtNotebook = false;
+
         if (!isOpen)
         {
-            ActionDisplay.SetActive(false);
-            ActionText.SetActive(false);
-            ExtraCross.SetActive(false);
-            NameObject.SetActive(false);
+            HideInteractionPrompt();
         }
     }
 
@@ -135,9 +138,22 @@ public class ReadNotebook : MonoBehaviour
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         if (crosshair != null) crosshair.SetActive(true);
 
-        ActionDisplay.SetActive(false);
-        ActionText.SetActive(false);
-        ExtraCross.SetActive(false);
-        NameObject.SetActive(false);
+        HideInteractionPrompt();
+    }
+
+    private void ShowInteractionPrompt()
+    {
+        if (NameObject != null) NameObject.SetActive(true);
+        if (ActionDisplay != null) ActionDisplay.SetActive(true);
+        if (ActionText != null) ActionText.SetActive(true);
+        if (ExtraCross != null) ExtraCross.SetActive(true);
+    }
+
+    private void HideInteractionPrompt()
+    {
+        if (NameObject != null) NameObject.SetActive(false);
+        if (ActionDisplay != null) ActionDisplay.SetActive(false);
+        if (ActionText != null) ActionText.SetActive(false);
+        if (ExtraCross != null) ExtraCross.SetActive(false);
     }
 }

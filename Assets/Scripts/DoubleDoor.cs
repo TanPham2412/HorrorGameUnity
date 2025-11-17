@@ -10,6 +10,7 @@ public class DoubleDoor : MonoBehaviour
     public GameObject ActionText2;
     public GameObject LeftDoor;
     public GameObject RightDoor;
+    public GameObject NameObject;
     public AudioSource DoorCreakSound;
     public GameObject ExtraCross;
     private bool doorIsOpen = false;
@@ -23,6 +24,7 @@ public class DoubleDoor : MonoBehaviour
     {
         if (TheDistance <= 3)
         {
+            NameObject.SetActive(true);
             ActionDisplay.SetActive(true);
             ExtraCross.SetActive(true);
             if (doorIsOpen == false)
@@ -36,6 +38,7 @@ public class DoubleDoor : MonoBehaviour
         }
         else
         {
+            NameObject.SetActive(false);
             ExtraCross.SetActive(false);
             ActionDisplay.SetActive(false);
             ActionText.SetActive(false);
@@ -59,6 +62,7 @@ public class DoubleDoor : MonoBehaviour
 
     void OnMouseExit()
     {
+        NameObject.SetActive(false);
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
@@ -70,6 +74,7 @@ public class DoubleDoor : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
         LeftDoor.GetComponent<Animation>().Play("DoorLeftOpen");
         RightDoor.GetComponent<Animation>().Play("DoorRightOpen");
         DoorCreakSound.Play();
@@ -82,6 +87,7 @@ public class DoubleDoor : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText2.SetActive(false);
+        NameObject.SetActive(false);
         LeftDoor.GetComponent<Animation>().Play("DoorLeftClose");
         RightDoor.GetComponent<Animation>().Play("DoorRightClose");
         DoorCreakSound.Play();

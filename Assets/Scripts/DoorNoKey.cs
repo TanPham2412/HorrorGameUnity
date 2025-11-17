@@ -9,6 +9,7 @@ public class DoorNoKey : MonoBehaviour
     public GameObject ActionText;
     public GameObject ActionText2;
     public GameObject Door;
+    public GameObject NameObject;
     public AudioSource DoorCreakSound;
     private bool doorIsOpen = false;
     public GameObject ExtraCross;
@@ -21,6 +22,7 @@ public class DoorNoKey : MonoBehaviour
     {
         if (TheDistance <= 3)
         {
+            NameObject.SetActive(true);
             ActionDisplay.SetActive(true);
             ExtraCross.SetActive (true);
             if (doorIsOpen == false)
@@ -33,7 +35,8 @@ public class DoorNoKey : MonoBehaviour
             }
         }
         else
-        {
+        {   
+            NameObject.SetActive(false);
             ExtraCross.SetActive(false);
             ActionDisplay.SetActive(false);
             ActionText.SetActive(false);
@@ -57,6 +60,7 @@ public class DoorNoKey : MonoBehaviour
 
     void OnMouseExit()
     {
+        NameObject.SetActive(false);
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
@@ -65,6 +69,7 @@ public class DoorNoKey : MonoBehaviour
 
     IEnumerator OpenTheDoor()
     {
+        NameObject.SetActive(false);
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
@@ -76,6 +81,7 @@ public class DoorNoKey : MonoBehaviour
 
     IEnumerator CloseTheDoor()
     {
+        NameObject.SetActive(false);
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText2.SetActive(false);
