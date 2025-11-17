@@ -28,6 +28,8 @@ public class PlayCassette : MonoBehaviour
     private bool isPlaying = false; // Đang phát video
     private bool hasShownText = false; // Đã hiển thị text sau video chưa
     private bool hasPlayedBreathing = false; // Đã phát tiếng thở dốc sau khi xem băng lần đầu
+    private bool hasLoggedFirstMonologue = false;
+    private bool hasLoggedSecondMonologue = false;
 
     void Start()
     {
@@ -138,12 +140,28 @@ public class PlayCassette : MonoBehaviour
     {
         // Hiển thị text KHÔNG khóa player
         TextBox.SetActive(true);
-        TextBox.GetComponent<TextMeshProUGUI>().text = "...Cái... cái quái gì vậy? Gã bảo vệ đó... ông ta thấy gì vậy? Tiếng cười đó... không phải con người.";
+
+        string firstLine = "...Cái... cái quái gì vậy? Gã bảo vệ đó... ông ta thấy gì vậy? Tiếng cười đó... không phải con người.";
+        TextBox.GetComponent<TextMeshProUGUI>().text = firstLine;
+        TryLogMonologue(firstLine, ref hasLoggedFirstMonologue);
         yield return new WaitForSeconds(5f); // Hiển thị trong 5 giây
-        TextBox.GetComponent<TextMeshProUGUI>().text = "Mình phải rời khỏi đây ngay lập tức. Không thể ở lại căn phòng này. Nơi này quá tối, mình cần phải tìm xem có cái ĐÈN PIN nào không và tìm thêm một vài MANH MỐI.";
+
+        string secondLine = "Mình phải rời khỏi đây ngay lập tức. Không thể ở lại căn phòng này. Nơi này quá tối, mình cần phải tìm xem có cái ĐÈN PIN nào không và tìm thêm một vài MANH MỐI.";
+        TextBox.GetComponent<TextMeshProUGUI>().text = secondLine;
+        TryLogMonologue(secondLine, ref hasLoggedSecondMonologue);
         yield return new WaitForSeconds(5f);
+
         TextBox.GetComponent<TextMeshProUGUI>().text = "";
         TextBox.SetActive(false);
+    }
+
+    private void TryLogMonologue(string text, ref bool hasLogged)
+    {
+        if (!hasLogged && !string.IsNullOrWhiteSpace(text))
+        {
+            ClueLogManager.AddMonologue(text);
+            hasLogged = true;
+        }
     }
 
     private void PlayBreathingSFX()
