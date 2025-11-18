@@ -26,6 +26,11 @@ public class ReadNotebook : MonoBehaviour
     public bool registerAsMonologue = false;     // Có ghi vào tab độc thoại không
     [TextArea(3, 8)] public string monologueEntry; // Nội dung hiển thị trong tab độc thoại
 
+    [Header("Monologue Playback")]
+    public bool playMonologueOnOpen = false; // Có phát lời thoại sau khi mở note không
+    [TextArea(3, 8)] public string monologueVoiceLine; // Nội dung hiển thị qua MonologueManager
+    public float monologueDuration = 4f;
+
     [Header("Player")]
     public MonoBehaviour playerMovementScript; // script điều khiển nhân vật
     public GameObject crosshair;              // crosshair chính
@@ -33,6 +38,7 @@ public class ReadNotebook : MonoBehaviour
     private bool isOpen = false;
     private bool hasRegisteredClue = false;
     private bool hasRegisteredMonologue = false;
+    private bool hasPlayedMonologueVoiceLine = false;
     private bool isPlayerLookingAtNotebook = false;
 
     void Start()
@@ -137,6 +143,19 @@ public class ReadNotebook : MonoBehaviour
         if (notePanel != null) notePanel.SetActive(false);
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         if (crosshair != null) crosshair.SetActive(true);
+
+        if (playMonologueOnOpen && !hasPlayedMonologueVoiceLine)
+        {
+            string voiceLine = string.IsNullOrWhiteSpace(monologueVoiceLine)
+                ? (!string.IsNullOrWhiteSpace(monologueEntry) ? monologueEntry : noteContent)
+                : monologueVoiceLine;
+
+            if (!string.IsNullOrWhiteSpace(voiceLine))
+            {
+                MonologueManager.PlayMonologue(voiceLine, monologueDuration, false, true);
+                hasPlayedMonologueVoiceLine = true;
+            }
+        }
 
         HideInteractionPrompt();
     }
