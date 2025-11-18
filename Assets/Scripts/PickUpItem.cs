@@ -9,7 +9,8 @@ public enum ItemType
     GuardKey,
     VHSTape,
     Flashlight,
-    SafeCard
+    SafeCard,
+    Crowbar
 }
 
 public class PickUpItem : MonoBehaviour
@@ -40,6 +41,7 @@ public class PickUpItem : MonoBehaviour
     [Range(0f, 1f)] public float dropVolume = 1f;
     
     private float actualDistanceToPlayer;
+    private static bool crowbarMonologuePlayed = false;
     
     void Update()
     {
@@ -107,6 +109,8 @@ public class PickUpItem : MonoBehaviour
                 return GlobalInventory.hasFlashlight;
             case ItemType.SafeCard:
                 return GlobalInventory.hasSafeCard;
+            case ItemType.Crowbar:
+                return GlobalInventory.hasCrowbar;
             default:
                 return false;
         }
@@ -159,6 +163,12 @@ public class PickUpItem : MonoBehaviour
 
         // Play pickup sound
         PlayPickupSound();
+
+        if (itemType == ItemType.Crowbar && !crowbarMonologuePlayed)
+        {
+            MonologueManager.PlayMonologue("Cái này... nặng đấy. Ít nhất cũng hữu dụng hơn là tay không. Có thể nạy được thứ gì đó.", 4f, true, true);
+            crowbarMonologuePlayed = true;
+        }
         
         // Debug log
         Debug.Log("Picked up: " + itemType + ", Regular item: " + GlobalInventory.currentRegularItem + ", Has flashlight: " + GlobalInventory.hasFlashlight);
