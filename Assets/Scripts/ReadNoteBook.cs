@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class ReadNotebook : MonoBehaviour
 {
@@ -31,6 +32,14 @@ public class ReadNotebook : MonoBehaviour
     [TextArea(3, 8)] public string monologueVoiceLine; // Nội dung hiển thị qua MonologueManager
     public float monologueDuration = 4f;
 
+    [Header("Sequence Monologue (Shared)")]
+    public bool useSequenceMonologue = false;
+    public string sequenceKey;
+    [TextArea(3, 8)] public string firstSequenceLine;
+    [TextArea(3, 8)] public string nextSequenceLine;
+    public float sequenceMonologueDuration = 4f;
+    public bool sequenceLineAddsToLog = true;
+
     [Header("Player")]
     public MonoBehaviour playerMovementScript; // script điều khiển nhân vật
     public GameObject crosshair;              // crosshair chính
@@ -39,7 +48,10 @@ public class ReadNotebook : MonoBehaviour
     private bool hasRegisteredClue = false;
     private bool hasRegisteredMonologue = false;
     private bool hasPlayedMonologueVoiceLine = false;
+    private bool hasTriggeredSequenceMonologue = false;
     private bool isPlayerLookingAtNotebook = false;
+
+    private static readonly Dictionary<string, int> sequenceProgress = new();
 
     void Start()
     {
@@ -157,6 +169,11 @@ public class ReadNotebook : MonoBehaviour
             }
         }
 
+        if (useSequenceMonologue)
+        {
+            HandleSequenceMonologue();
+        }
+
         HideInteractionPrompt();
     }
 
@@ -174,5 +191,28 @@ public class ReadNotebook : MonoBehaviour
         if (ActionDisplay != null) ActionDisplay.SetActive(false);
         if (ActionText != null) ActionText.SetActive(false);
         if (ExtraCross != null) ExtraCross.SetActive(false);
+    }
+
+    private void HandleSequenceMonologue()
+    {
+        if (hasTriggeredSequenceMonologue) return;
+        if (string.IsNullOrWhiteSpace(sequenceKey)) return;
+
+        if (!sequenceProgress.TryGetValue(sequenceKey, out int progress))
+        {
+            progress = 0;
+        }
+
+        string lineToPlay = progress == 0 ? firstSequenceLine : nextSequenceLine;
+        if (string.IsNullOrWhiteSpace(lineToPlay))
+        {
+            sequenceProgress[sequenceKey] = progress + 1;
+            hasTriggeredSequenceMonologue = true;
+            return;
+        }
+
+        MonologueManager.PlayMonologue(lineToPlay, sequenceMonologueDuration, sequenceLineAddsToLog, true);
+        sequenceProgress[sequenceKey] = progress + 1;
+        hasTriggeredSequenceMonologue = true;
     }
 }
