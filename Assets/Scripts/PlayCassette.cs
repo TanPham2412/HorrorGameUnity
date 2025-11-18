@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
@@ -17,8 +18,24 @@ public class PlayCassette : MonoBehaviour
     public GameObject fullScreenVideoUI; // Kéo FullScreenVideo (Raw Image) vào đây
     public MonoBehaviour playerMovementScript; // Kéo SCRIPT điều khiển nhân vật vào đây
     public GameObject crosshair; // Kéo crosshair UI vào đây (nếu có)
-    public GameObject TextBox; // Kéo TextBox UI vào đây để hiển thị text sau video
     public PickUpItem flashlightPickUp; // Kéo FlashLightTrigger (PickUpItem) vào đây
+
+    [Header("Monologue Settings")]
+    public List<MonologueLine> cassetteMonologueLines = new()
+    {
+        new MonologueLine
+        {
+            text = "...Cái... cái quái gì vậy? Gã bảo vệ đó... ông ta thấy gì vậy? Tiếng cười đó... không phải con người.",
+            duration = 5f
+        },
+        new MonologueLine
+        {
+            text = "Mình phải rời khỏi đây ngay lập tức. Không thể ở lại căn phòng này. Nơi này quá tối, mình cần phải tìm xem có cái ĐÈN PIN nào không và tìm thêm một vài MANH MỐI.",
+            duration = 5f
+        }
+    };
+    public bool logCassetteMonologuesToLog = true;
+    public bool preventCassetteDuplicate = true;
 
     [Header("Audio Settings")]
     public AudioSource breathingAudioSource; // Nên kéo AudioSource của nhân vật vào đây
@@ -28,8 +45,7 @@ public class PlayCassette : MonoBehaviour
     private bool isPlaying = false; // Đang phát video
     private bool hasShownText = false; // Đã hiển thị text sau video chưa
     private bool hasPlayedBreathing = false; // Đã phát tiếng thở dốc sau khi xem băng lần đầu
-    private bool hasLoggedFirstMonologue = false;
-    private bool hasLoggedSecondMonologue = false;
+    private bool hasQueuedCassetteMonologues = false;
 
     void Start()
     {
@@ -129,7 +145,7 @@ public class PlayCassette : MonoBehaviour
         }
         
         // Hiển thị text sau khi xem video (chỉ lần đầu tiên)
-        if (!hasShownText && TextBox != null)
+        if (!hasShownText)
         {
             hasShownText = true;
             StartCoroutine(ShowTextAfterVideo());
@@ -138,30 +154,29 @@ public class PlayCassette : MonoBehaviour
     
     IEnumerator ShowTextAfterVideo()
     {
-        // Hiển thị text KHÔNG khóa player
-        TextBox.SetActive(true);
-
-        string firstLine = "...Cái... cái quái gì vậy? Gã bảo vệ đó... ông ta thấy gì vậy? Tiếng cười đó... không phải con người.";
-        TextBox.GetComponent<TextMeshProUGUI>().text = firstLine;
-        TryLogMonologue(firstLine, ref hasLoggedFirstMonologue);
-        yield return new WaitForSeconds(5f); // Hiển thị trong 5 giây
-
-        string secondLine = "Mình phải rời khỏi đây ngay lập tức. Không thể ở lại căn phòng này. Nơi này quá tối, mình cần phải tìm xem có cái ĐÈN PIN nào không và tìm thêm một vài MANH MỐI.";
-        TextBox.GetComponent<TextMeshProUGUI>().text = secondLine;
-        TryLogMonologue(secondLine, ref hasLoggedSecondMonologue);
-        yield return new WaitForSeconds(5f);
-
-        TextBox.GetComponent<TextMeshProUGUI>().text = "";
-        TextBox.SetActive(false);
+        QueueCassetteMonologues();
+        yield break;
     }
 
-    private void TryLogMonologue(string text, ref bool hasLogged)
+    private void QueueCassetteMonologues()
     {
-        if (!hasLogged && !string.IsNullOrWhiteSpace(text))
+        if (hasQueuedCassetteMonologues) return;
+        hasQueuedCassetteMonologues = true;
+
+        if (cassetteMonologueLines == null || cassetteMonologueLines.Count == 0) return;
+
+        foreach (var line in cassetteMonologueLines)
         {
-            ClueLogManager.AddMonologue(text);
-            hasLogged = true;
+            if (line == null || string.IsNullOrWhiteSpace(line.text)) continue;
+            MonologueManager.PlayMonologue(line.text, line.duration, logCassetteMonologuesToLog, preventCassetteDuplicate);
         }
+    }
+
+    [System.Serializable]
+    public class MonologueLine
+    {
+        [TextArea(2, 5)] public string text;
+        public float duration = 5f;
     }
 
     private void PlayBreathingSFX()

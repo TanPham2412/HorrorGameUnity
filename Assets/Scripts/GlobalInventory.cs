@@ -9,9 +9,10 @@ public class GlobalInventory : MonoBehaviour
     public static bool hasGuardKey = false;
     public static bool hasVHSTape = false;
     public static bool hasFlashlight = false;
+    public static bool hasSafeCard = false;
 
     // Two-slot inventory system: flashlight + one regular item
-    public static ItemType? currentRegularItem = null;  // Key, GuardKey, VHSTape
+    public static ItemType? currentRegularItem = null;  // Key, GuardKey, VHSTape, SafeCard
     public static PickUpItem currentRegularItemScript = null;
     public static PickUpItem flashlightScript = null;   // Flashlight has its own slot
 
@@ -85,6 +86,7 @@ public class GlobalInventory : MonoBehaviour
         hasKey = false;
         hasGuardKey = false;
         hasVHSTape = false;
+        hasSafeCard = false;
         // Don't clear flashlight here as it has its own slot
     }
 
@@ -103,6 +105,9 @@ public class GlobalInventory : MonoBehaviour
                 break;
             case ItemType.Flashlight:
                 hasFlashlight = value;
+                break;
+            case ItemType.SafeCard:
+                hasSafeCard = value;
                 break;
         }
     }

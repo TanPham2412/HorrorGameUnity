@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class ReadNotebook : MonoBehaviour
 {
@@ -26,6 +27,19 @@ public class ReadNotebook : MonoBehaviour
     public bool registerAsMonologue = false;     // Có ghi vào tab độc thoại không
     [TextArea(3, 8)] public string monologueEntry; // Nội dung hiển thị trong tab độc thoại
 
+    [Header("Monologue Playback")]
+    public bool playMonologueOnOpen = false; // Có phát lời thoại sau khi mở note không
+    [TextArea(3, 8)] public string monologueVoiceLine; // Nội dung hiển thị qua MonologueManager
+    public float monologueDuration = 4f;
+
+    [Header("Sequence Monologue (Shared)")]
+    public bool useSequenceMonologue = false;
+    public string sequenceKey;
+    [TextArea(3, 8)] public string firstSequenceLine;
+    [TextArea(3, 8)] public string nextSequenceLine;
+    public float sequenceMonologueDuration = 4f;
+    public bool sequenceLineAddsToLog = true;
+
     [Header("Player")]
     public MonoBehaviour playerMovementScript; // script điều khiển nhân vật
     public GameObject crosshair;              // crosshair chính
@@ -33,7 +47,17 @@ public class ReadNotebook : MonoBehaviour
     private bool isOpen = false;
     private bool hasRegisteredClue = false;
     private bool hasRegisteredMonologue = false;
+    private bool hasPlayedMonologueVoiceLine = false;
+    private bool hasTriggeredSequenceMonologue = false;
     private bool isPlayerLookingAtNotebook = false;
+
+    private static readonly Dictionary<string, int> sequenceProgress = new();
+
+    public static bool HasSequenceCompleted(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        return sequenceProgress.TryGetValue(key, out int progress) && progress > 0;
+    }
 
     void Start()
     {
@@ -138,6 +162,24 @@ public class ReadNotebook : MonoBehaviour
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         if (crosshair != null) crosshair.SetActive(true);
 
+        if (playMonologueOnOpen && !hasPlayedMonologueVoiceLine)
+        {
+            string voiceLine = string.IsNullOrWhiteSpace(monologueVoiceLine)
+                ? (!string.IsNullOrWhiteSpace(monologueEntry) ? monologueEntry : noteContent)
+                : monologueVoiceLine;
+
+            if (!string.IsNullOrWhiteSpace(voiceLine))
+            {
+                MonologueManager.PlayMonologue(voiceLine, monologueDuration, false, true);
+                hasPlayedMonologueVoiceLine = true;
+            }
+        }
+
+        if (useSequenceMonologue)
+        {
+            HandleSequenceMonologue();
+        }
+
         HideInteractionPrompt();
     }
 
@@ -155,5 +197,28 @@ public class ReadNotebook : MonoBehaviour
         if (ActionDisplay != null) ActionDisplay.SetActive(false);
         if (ActionText != null) ActionText.SetActive(false);
         if (ExtraCross != null) ExtraCross.SetActive(false);
+    }
+
+    private void HandleSequenceMonologue()
+    {
+        if (hasTriggeredSequenceMonologue) return;
+        if (string.IsNullOrWhiteSpace(sequenceKey)) return;
+
+        if (!sequenceProgress.TryGetValue(sequenceKey, out int progress))
+        {
+            progress = 0;
+        }
+
+        string lineToPlay = progress == 0 ? firstSequenceLine : nextSequenceLine;
+        if (string.IsNullOrWhiteSpace(lineToPlay))
+        {
+            sequenceProgress[sequenceKey] = progress + 1;
+            hasTriggeredSequenceMonologue = true;
+            return;
+        }
+
+        MonologueManager.PlayMonologue(lineToPlay, sequenceMonologueDuration, sequenceLineAddsToLog, true);
+        sequenceProgress[sequenceKey] = progress + 1;
+        hasTriggeredSequenceMonologue = true;
     }
 }

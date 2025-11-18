@@ -25,6 +25,7 @@ public class ClueLogManager : MonoBehaviour
 
     [Header("Input Settings")]
     public KeyCode toggleKey = KeyCode.I;
+    [Range(0.01f, 0.5f)] public float scrollStepNormalized = 0.12f;
 
     private readonly List<string> clues = new();
     private readonly List<string> monologues = new();
@@ -69,6 +70,15 @@ public class ClueLogManager : MonoBehaviour
             else if (Input.GetKeyDown(KeyCode.RightArrow) && showingClues)
             {
                 ShowMonologueTab();
+            }
+
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                ScrollUp();
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                ScrollDown();
             }
         }
     }
@@ -160,6 +170,25 @@ public class ClueLogManager : MonoBehaviour
     public void ShowMonologueTab()
     {
         ShowTab(false);
+    }
+
+    public void ScrollUp()
+    {
+        ScrollActiveList(scrollStepNormalized);
+    }
+
+    public void ScrollDown()
+    {
+        ScrollActiveList(-scrollStepNormalized);
+    }
+
+    void ScrollActiveList(float delta)
+    {
+        ScrollRect target = showingClues ? cluesScrollRect : monologueScrollRect;
+        if (target == null) return;
+
+        float next = Mathf.Clamp01(target.verticalNormalizedPosition + delta);
+        target.verticalNormalizedPosition = next;
     }
 
     void OpenLog()
