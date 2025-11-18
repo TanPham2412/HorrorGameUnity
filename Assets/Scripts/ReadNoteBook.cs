@@ -53,6 +53,12 @@ public class ReadNotebook : MonoBehaviour
 
     private static readonly Dictionary<string, int> sequenceProgress = new();
 
+    public static bool HasSequenceCompleted(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        return sequenceProgress.TryGetValue(key, out int progress) && progress > 0;
+    }
+
     void Start()
     {
         // Đảm bảo panel tắt lúc bắt đầu game

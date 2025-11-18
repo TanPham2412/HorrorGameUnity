@@ -8,7 +8,8 @@ public enum ItemType
     Key,
     GuardKey,
     VHSTape,
-    Flashlight
+    Flashlight,
+    SafeCard
 }
 
 public class PickUpItem : MonoBehaviour
@@ -104,6 +105,8 @@ public class PickUpItem : MonoBehaviour
                 return GlobalInventory.hasVHSTape;
             case ItemType.Flashlight:
                 return GlobalInventory.hasFlashlight;
+            case ItemType.SafeCard:
+                return GlobalInventory.hasSafeCard;
             default:
                 return false;
         }
