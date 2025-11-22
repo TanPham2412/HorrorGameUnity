@@ -6,7 +6,11 @@ using UnityEngine.UI;
 public enum ItemType
 {
     Key,
-    VHSTape
+    GuardKey,
+    VHSTape,
+    Flashlight,
+    SafeCard,
+    Crowbar
 }
 
 public class PickUpItem : MonoBehaviour
@@ -18,6 +22,7 @@ public class PickUpItem : MonoBehaviour
     public float TheDistance;
     public GameObject ActionDisplay;
     public GameObject ActionText;
+    public GameObject NameObject;
     public GameObject ExtraCross;
     
     [Header("Item Objects")]
@@ -25,12 +30,49 @@ public class PickUpItem : MonoBehaviour
     public GameObject RealItem;
     public GameObject Player;
     
+    [Header("Pickup Settings")]
+    public float pickupDistance = 3f; // Khoảng cách tối đa để nhặt item
+    
+    [Header("Audio Settings")]
+    public AudioSource audioSource;
+    public AudioClip pickUpClip;
+    public AudioClip dropClip;
+    [Range(0f, 1f)] public float pickUpVolume = 1f;
+    [Range(0f, 1f)] public float dropVolume = 1f;
+
+    [Header("Pickup Special Effects")]
+    public bool triggerSpecialEffects = false;
+    public ItemType specialEffectItem = ItemType.SafeCard;
+    public AudioSource screamAudio;
+    public List<Light> blackoutLights = new();
+    public GameObject playerFlashlightObject;
+    public Light playerFlashlightLight;
+    public MonoBehaviour flashlightToggleScript;
+    public GameObject ghostJumpScare;
+    public AudioSource breathingAudio;
+    [TextArea(2, 4)] public string postGhostLine1;
+    [TextArea(2, 4)] public string postGhostLine2;
+    public float postGhostLineDuration = 4f;
+    public float blackoutDuration = 2f;
+    public float ghostVisibleDuration = 1f;
+    public float secondBlackoutDuration = 0.5f;
+    
+    private float actualDistanceToPlayer;
+    private static bool crowbarMonologuePlayed = false;
+    private bool specialEffectTriggered = false;
+    
     void Update()
     {
         TheDistance = PlayerCasting.DistanceFromTarget;
+        
+        // Tính khoảng cách thực tế từ player đến item
+        if (Player != null)
+        {
+            actualDistanceToPlayer = Vector3.Distance(Player.transform.position, transform.position);
+        }
 
-        // Check for drop input based on item type
-        if (Input.GetKeyDown(KeyCode.Q) && HasItem())
+        // Check for drop input based on item type (KHÔNG cho phép vứt flashlight)
+        if (Input.GetKeyDown(KeyCode.Q) && GlobalInventory.HasSpecificItem(itemType) && itemType != ItemType.Flashlight)
         {
             DropItem();
         }
@@ -38,15 +80,25 @@ public class PickUpItem : MonoBehaviour
 
     void OnMouseOver()
     {
-        if (TheDistance <= 3)
+        // Nếu là flashlight nhưng chưa được phép nhặt thì không hiện UI, không cho nhặt
+        if (itemType == ItemType.Flashlight && !GlobalInventory.canPickupFlashlight)
+        {
+            return;
+        }
+
+        // Sử dụng khoảng cách thực tế thay vì chỉ dựa vào raycast
+        bool isInRange = actualDistanceToPlayer <= pickupDistance;
+
+        if (isInRange)
         {
             ActionDisplay.SetActive(true);
+            NameObject.SetActive(true);
             ActionText.SetActive(true);
             ExtraCross.SetActive(true);
         }
         if (Input.GetButtonDown("Action"))
         {
-            if (TheDistance <= 3)
+            if (isInRange)
             {
                 PickUpItemAction();
             }
@@ -58,6 +110,7 @@ public class PickUpItem : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
     }
     
     private bool HasItem()
@@ -66,8 +119,16 @@ public class PickUpItem : MonoBehaviour
         {
             case ItemType.Key:
                 return GlobalInventory.hasKey;
+            case ItemType.GuardKey:
+                return GlobalInventory.hasGuardKey;
             case ItemType.VHSTape:
                 return GlobalInventory.hasVHSTape;
+            case ItemType.Flashlight:
+                return GlobalInventory.hasFlashlight;
+            case ItemType.SafeCard:
+                return GlobalInventory.hasSafeCard;
+            case ItemType.Crowbar:
+                return GlobalInventory.hasCrowbar;
             default:
                 return false;
         }
@@ -75,19 +136,35 @@ public class PickUpItem : MonoBehaviour
     
     private void SetItemStatus(bool status)
     {
-        switch (itemType)
+        // This method is now handled by GlobalInventory.SetCurrentItem() and GlobalInventory.ClearCurrentItem()
+        // Kept for legacy compatibility if needed
+        if (status)
         {
-            case ItemType.Key:
-                GlobalInventory.hasKey = status;
-                break;
-            case ItemType.VHSTape:
-                GlobalInventory.hasVHSTape = status;
-                break;
+            GlobalInventory.SetCurrentItem(itemType, this);
+        }
+        else
+        {
+            GlobalInventory.ClearCurrentItem(itemType);
         }
     }
     
     private void PickUpItemAction()
     {
+        // Handle two-slot inventory system
+        if (itemType == ItemType.Flashlight)
+        {
+            // Flashlight has its own slot, no need to drop anything
+        }
+        else
+        {
+            // For regular items (Key, GuardKey, VHSTape), check if regular slot is occupied
+            if (GlobalInventory.HasRegularItem())
+            {
+                // Drop the currently held regular item before picking up the new one
+                DropCurrentlyHeldRegularItem();
+            }
+        }
+
         // Tách item ra khỏi parent (cái tủ)
         transform.SetParent(null);
 
@@ -95,31 +172,251 @@ public class PickUpItem : MonoBehaviour
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
         FakeItem.SetActive(false);
         RealItem.SetActive(true);
-        SetItemStatus(true);
+        
+        // Use new inventory system
+        GlobalInventory.SetCurrentItem(itemType, this);
+
+        // Play pickup sound
+        PlayPickupSound();
+
+        if (itemType == ItemType.Crowbar && !crowbarMonologuePlayed)
+        {
+            MonologueManager.PlayMonologue("Cái này... nặng đấy. Ít nhất cũng hữu dụng hơn là tay không. Có thể nạy được thứ gì đó.", 4f, true, true);
+            crowbarMonologuePlayed = true;
+        }
+
+        if (triggerSpecialEffects && itemType == specialEffectItem && !specialEffectTriggered)
+        {
+            specialEffectTriggered = true;
+            StartCoroutine(HandlePickupEffects());
+        }
         
         // Debug log
-        Debug.Log("Picked up: " + itemType + ", hasVHSTape = " + GlobalInventory.hasVHSTape);
+        Debug.Log("Picked up: " + itemType + ", Regular item: " + GlobalInventory.currentRegularItem + ", Has flashlight: " + GlobalInventory.hasFlashlight);
+    }
+
+    private IEnumerator HandlePickupEffects()
+    {
+        bool flashlightLightWasOn = playerFlashlightLight != null && playerFlashlightLight.enabled;
+        bool flashlightObjectWasActive = playerFlashlightObject != null && playerFlashlightObject.activeSelf;
+
+        if (flashlightToggleScript != null)
+        {
+            flashlightToggleScript.enabled = false;
+        }
+
+        List<bool> previousStates = new();
+        foreach (var light in blackoutLights)
+        {
+            if (light == null)
+            {
+                previousStates.Add(false);
+                continue;
+            }
+
+            previousStates.Add(light.enabled);
+            light.enabled = false;
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = false;
+        }
+
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(false);
+        }
+
+        yield return new WaitForSeconds(blackoutDuration);
+
+        for (int i = 0; i < blackoutLights.Count; i++)
+        {
+            Light light = blackoutLights[i];
+            if (light == null) continue;
+            bool wasEnabled = i < previousStates.Count ? previousStates[i] : true;
+            light.enabled = wasEnabled;
+        }
+
+
+        if (ghostJumpScare != null)
+        {
+            ghostJumpScare.SetActive(true);
+        }
+
+        if (screamAudio != null)
+        {
+            screamAudio.Play();
+        }
+
+        yield return new WaitForSeconds(ghostVisibleDuration);
+
+        if (ghostJumpScare != null)
+        {
+            ghostJumpScare.SetActive(false);
+        }
+
+        foreach (var light in blackoutLights)
+        {
+            if (light == null) continue;
+            light.enabled = false;
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = false;
+        }
+
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(false);
+        }
+
+        yield return new WaitForSeconds(secondBlackoutDuration);
+
+        for (int i = 0; i < blackoutLights.Count; i++)
+        {
+            Light light = blackoutLights[i];
+            if (light == null) continue;
+            bool wasEnabled = i < previousStates.Count ? previousStates[i] : true;
+            light.enabled = wasEnabled;
+        }
+
+        if (breathingAudio != null)
+        {
+            breathingAudio.Play();
+        }
+
+        if (!string.IsNullOrWhiteSpace(postGhostLine1))
+        {
+            MonologueManager.PlayMonologue(postGhostLine1, postGhostLineDuration, true, true);
+            yield return new WaitForSeconds(postGhostLineDuration);
+        }
+
+        if (!string.IsNullOrWhiteSpace(postGhostLine2))
+        {
+            MonologueManager.PlayMonologue(postGhostLine2, postGhostLineDuration, true, true);
+            yield return new WaitForSeconds(postGhostLineDuration);
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = flashlightLightWasOn;
+        }
+
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(flashlightObjectWasActive);
+        }
+
+        if (flashlightToggleScript != null)
+        {
+            flashlightToggleScript.enabled = true;
+        }
     }
     
-    private void DropItem()
+    private void DropItem(bool playDropSound = true)
     {
         this.GetComponent<BoxCollider>().enabled = true;
         ExtraCross.SetActive(false);
         ActionDisplay.SetActive(false);
         ActionText.SetActive(false);
+        NameObject.SetActive(false);
 
         // Tách item ra khỏi parent để nó không bị đi theo tủ nữa
         transform.SetParent(null);
         FakeItem.transform.SetParent(null);
 
-        Vector3 dropPos = Player.transform.position + Player.transform.forward * 0.5f;
+        // Thả vật phẩm xuống bề mặt ngay bên dưới vị trí tay cầm (RealItem)
+        Vector3 dropPos;
+        RaycastHit hit;
+        float surfaceOffset = 0.02f; // Đặt cách bề mặt một khoảng rất nhỏ
+
+        // Chọn điểm bắt đầu raycast: ưu tiên vị trí RealItem (vật đang cầm trên tay)
+        Vector3 origin;
+        if (RealItem != null)
+        {
+            origin = RealItem.transform.position + Vector3.up * 0.2f;
+        }
+        else if (Player != null)
+        {
+            origin = Player.transform.position + Vector3.up * 1.0f;
+        }
+        else
+        {
+            origin = transform.position + Vector3.up * 1.0f;
+        }
+
+        // 1. Raycast từ trên xuống để tìm bề mặt (bàn, tủ, sàn...)
+        if (Physics.Raycast(origin, Vector3.down, out hit, 5f))
+        {
+            dropPos = hit.point + Vector3.up * surfaceOffset;
+        }
+        else
+        {
+            // 2. Nếu không có bề mặt bên dưới tay, thả xuống sàn phía trước player
+            Vector3 forwardPos;
+            if (Player != null)
+            {
+                forwardPos = Player.transform.position + Player.transform.forward * 0.5f;
+            }
+            else
+            {
+                forwardPos = transform.position + transform.forward * 0.5f;
+            }
+
+            if (Physics.Raycast(forwardPos + Vector3.up * 2f, Vector3.down, out hit, 5f))
+            {
+                dropPos = hit.point + Vector3.up * surfaceOffset;
+            }
+            else
+            {
+                // 3. Fallback: đặt ở vị trí mặc định phía trước player
+                dropPos = forwardPos;
+            }
+        }
+
         transform.position = dropPos;
         FakeItem.transform.position = dropPos;
 
         FakeItem.SetActive(true);
         RealItem.SetActive(false);
-        SetItemStatus(false);
+        
+        // Use new inventory system
+        GlobalInventory.ClearCurrentItem(itemType);
+
+        // Play drop sound only when requested (Q-drop)
+        if (playDropSound)
+        {
+            PlayDropSound();
+        }
+    }
+    
+    private void DropCurrentlyHeldRegularItem()
+    {
+        if (GlobalInventory.GetCurrentRegularItemScript() != null)
+        {
+            // Auto-drop when picking another item -> don't play drop sound here
+            GlobalInventory.GetCurrentRegularItemScript().DropItem(false);
+        }
+    }
+
+    private void PlayPickupSound()
+    {
+        if (audioSource != null && pickUpClip != null)
+        {
+            audioSource.PlayOneShot(pickUpClip, pickUpVolume);
+        }
+    }
+
+    private void PlayDropSound()
+    {
+        if (audioSource != null && dropClip != null)
+        {
+            audioSource.PlayOneShot(dropClip, dropVolume);
+        }
     }
 }

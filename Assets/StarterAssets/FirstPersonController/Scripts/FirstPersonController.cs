@@ -51,6 +51,10 @@ namespace StarterAssets
 		[Tooltip("How far in degrees can you move the camera down")]
 		public float BottomClamp = -90.0f;
 
+		[Header("Flashlight")]
+		[Tooltip("FlashLightReal GameObject")]
+		public GameObject FlashlightObject;
+
 		// cinemachine
 		private float _cinemachineTargetPitch;
 
@@ -108,6 +112,12 @@ namespace StarterAssets
 			// reset our timeouts on start
 			_jumpTimeoutDelta = JumpTimeout;
 			_fallTimeoutDelta = FallTimeout;
+
+			// Ẩn flashlight lúc bắt đầu
+			if (FlashlightObject != null)
+			{
+				FlashlightObject.SetActive(false);
+			}
 		}
 
 		private void Update()
@@ -115,6 +125,7 @@ namespace StarterAssets
 			JumpAndGravity();
 			GroundedCheck();
 			Move();
+			HandleFlashlight();
 		}
 
 		private void LateUpdate()
@@ -246,23 +257,33 @@ namespace StarterAssets
 			}
 		}
 
-		private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
-		{
-			if (lfAngle < -360f) lfAngle += 360f;
-			if (lfAngle > 360f) lfAngle -= 360f;
-			return Mathf.Clamp(lfAngle, lfMin, lfMax);
-		}
 
-		private void OnDrawGizmosSelected()
-		{
-			Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
-			Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
+        private static float ClampAngle(float lfAngle, float lfMin, float lfMax)
+        {
+            if (lfAngle < -360f) lfAngle += 360f;
+            if (lfAngle > 360f) lfAngle -= 360f;
+            return Mathf.Clamp(lfAngle, lfMin, lfMax);
+        }
 
-			if (Grounded) Gizmos.color = transparentGreen;
-			else Gizmos.color = transparentRed;
+        private void HandleFlashlight()
+        {
+            // Debug: Kiểm tra từng điều kiện
+            if (Input.GetKeyDown(KeyCode.L))
+            {
+                Debug.Log("L key pressed!");
+                Debug.Log("FlashlightObject != null: " + (FlashlightObject != null));
+                Debug.Log("GlobalInventory.hasFlashlight: " + GlobalInventory.hasFlashlight);
+            }
 
-			// when selected, draw a gizmo in the position of, and matching radius of, the grounded collider
-			Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
-		}
-	}
+            // Chỉ cho phép bật/tắt đèn khi đã nhặt flashlight
+            if (FlashlightObject != null && Input.GetKeyDown(KeyCode.L) && GlobalInventory.hasFlashlight)
+            {
+                // Bật/tắt cả GameObject (bao gồm model và ánh sáng)
+                FlashlightObject.SetActive(!FlashlightObject.activeSelf);
+                Debug.Log("Flashlight toggled: " + FlashlightObject.activeSelf);
+            }
+        }
+    }
+
+	
 }

@@ -1,15 +1,27 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
+public enum DoorType
+{
+    GenericDoor,
+    GuardRoom
+}
+
 public class DoorKey : MonoBehaviour
 {
 
+    [Header("Door Settings")]
+    public DoorType doorType = DoorType.GenericDoor;
+    
+    [Header("Interaction Settings")]
     public float TheDistance;
     public GameObject ActionDisplay;
     public GameObject ActionText;
     public GameObject ActionText2;
     public GameObject LockedText;
     public GameObject Door;
+    public GameObject NameObject;
     public AudioSource DoorCreakSound;
     private bool doorIsOpen = false;
     private bool isUnlocked = false;
@@ -23,7 +35,8 @@ public class DoorKey : MonoBehaviour
     {
         if (TheDistance <= 3)
         {
-            if (isUnlocked == false && GlobalInventory.hasKey == false)
+            NameObject.SetActive(true);
+            if (isUnlocked == false && !HasRequiredKey())
             {
                 LockedText.SetActive(true);
             }
@@ -51,7 +64,7 @@ public class DoorKey : MonoBehaviour
         }
         if (Input.GetButtonDown("Action"))
         {
-            if (TheDistance <= 3 && (GlobalInventory.hasKey == true || isUnlocked == true))
+            if (TheDistance <= 3 && (HasRequiredKey() || isUnlocked == true))
             {
                 if (doorIsOpen == false)
                 {
@@ -72,6 +85,7 @@ public class DoorKey : MonoBehaviour
         ActionText.SetActive(false);
         ActionText2.SetActive(false);
         LockedText.SetActive(false);
+        NameObject.SetActive(false);
     }
 
     IEnumerator OpenTheDoor()
@@ -95,5 +109,18 @@ public class DoorKey : MonoBehaviour
         DoorCreakSound.Play();
         doorIsOpen = false;
         yield return new WaitForSeconds(1f);
+    }
+    
+    private bool HasRequiredKey()
+    {
+        switch (doorType)
+        {
+            case DoorType.GenericDoor:
+                return GlobalInventory.hasKey;
+            case DoorType.GuardRoom:
+                return GlobalInventory.hasGuardKey;
+            default:
+                return false;
+        }
     }
 }
