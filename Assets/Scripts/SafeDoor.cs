@@ -109,6 +109,12 @@ public class SafeDoor : MonoBehaviour
 
     void OnFocus()
     {
+        if (isOpen)
+        {
+            HideAllInteractionUI();
+            return;
+        }
+
         if (nameObject != null) nameObject.SetActive(true);
         if (extraCross != null) extraCross.SetActive(true);
 
@@ -124,6 +130,11 @@ public class SafeDoor : MonoBehaviour
     }
 
     void OnLoseFocus()
+    {
+        HideAllInteractionUI();
+    }
+
+    void HideAllInteractionUI()
     {
         if (nameObject != null) nameObject.SetActive(false);
         if (extraCross != null) extraCross.SetActive(false);
@@ -251,10 +262,7 @@ public class SafeDoor : MonoBehaviour
 
     void OpenSafe()
     {
-        if (actionDisplay != null) actionDisplay.SetActive(false);
-        if (actionText != null) actionText.SetActive(false);
-        if (lockedText != null) lockedText.SetActive(false);
-        if (extraCross != null) extraCross.SetActive(false);
+        HideAllInteractionUI();
 
         HideKeypad();
 
