@@ -39,9 +39,27 @@ public class PickUpItem : MonoBehaviour
     public AudioClip dropClip;
     [Range(0f, 1f)] public float pickUpVolume = 1f;
     [Range(0f, 1f)] public float dropVolume = 1f;
+
+    [Header("Pickup Special Effects")]
+    public bool triggerSpecialEffects = false;
+    public ItemType specialEffectItem = ItemType.SafeCard;
+    public AudioSource screamAudio;
+    public List<Light> blackoutLights = new();
+    public GameObject playerFlashlightObject;
+    public Light playerFlashlightLight;
+    public MonoBehaviour flashlightToggleScript;
+    public GameObject ghostJumpScare;
+    public AudioSource breathingAudio;
+    [TextArea(2, 4)] public string postGhostLine1;
+    [TextArea(2, 4)] public string postGhostLine2;
+    public float postGhostLineDuration = 4f;
+    public float blackoutDuration = 2f;
+    public float ghostVisibleDuration = 1f;
+    public float secondBlackoutDuration = 0.5f;
     
     private float actualDistanceToPlayer;
     private static bool crowbarMonologuePlayed = false;
+    private bool specialEffectTriggered = false;
     
     void Update()
     {
@@ -169,9 +187,135 @@ public class PickUpItem : MonoBehaviour
             MonologueManager.PlayMonologue("Cái này... nặng đấy. Ít nhất cũng hữu dụng hơn là tay không. Có thể nạy được thứ gì đó.", 4f, true, true);
             crowbarMonologuePlayed = true;
         }
+
+        if (triggerSpecialEffects && itemType == specialEffectItem && !specialEffectTriggered)
+        {
+            specialEffectTriggered = true;
+            StartCoroutine(HandlePickupEffects());
+        }
         
         // Debug log
         Debug.Log("Picked up: " + itemType + ", Regular item: " + GlobalInventory.currentRegularItem + ", Has flashlight: " + GlobalInventory.hasFlashlight);
+    }
+
+    private IEnumerator HandlePickupEffects()
+    {
+        bool flashlightLightWasOn = playerFlashlightLight != null && playerFlashlightLight.enabled;
+        bool flashlightObjectWasActive = playerFlashlightObject != null && playerFlashlightObject.activeSelf;
+
+        if (flashlightToggleScript != null)
+        {
+            flashlightToggleScript.enabled = false;
+        }
+
+        List<bool> previousStates = new();
+        foreach (var light in blackoutLights)
+        {
+            if (light == null)
+            {
+                previousStates.Add(false);
+                continue;
+            }
+
+            previousStates.Add(light.enabled);
+            light.enabled = false;
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = false;
+        }
+
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(false);
+        }
+
+        yield return new WaitForSeconds(blackoutDuration);
+
+        for (int i = 0; i < blackoutLights.Count; i++)
+        {
+            Light light = blackoutLights[i];
+            if (light == null) continue;
+            bool wasEnabled = i < previousStates.Count ? previousStates[i] : true;
+            light.enabled = wasEnabled;
+        }
+
+
+        if (ghostJumpScare != null)
+        {
+            ghostJumpScare.SetActive(true);
+        }
+
+        if (screamAudio != null)
+        {
+            screamAudio.Play();
+        }
+
+        yield return new WaitForSeconds(ghostVisibleDuration);
+
+        if (ghostJumpScare != null)
+        {
+            ghostJumpScare.SetActive(false);
+        }
+
+        foreach (var light in blackoutLights)
+        {
+            if (light == null) continue;
+            light.enabled = false;
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = false;
+        }
+
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(false);
+        }
+
+        yield return new WaitForSeconds(secondBlackoutDuration);
+
+        for (int i = 0; i < blackoutLights.Count; i++)
+        {
+            Light light = blackoutLights[i];
+            if (light == null) continue;
+            bool wasEnabled = i < previousStates.Count ? previousStates[i] : true;
+            light.enabled = wasEnabled;
+        }
+
+        if (breathingAudio != null)
+        {
+            breathingAudio.Play();
+        }
+
+        if (!string.IsNullOrWhiteSpace(postGhostLine1))
+        {
+            MonologueManager.PlayMonologue(postGhostLine1, postGhostLineDuration, true, true);
+            yield return new WaitForSeconds(postGhostLineDuration);
+        }
+
+        if (!string.IsNullOrWhiteSpace(postGhostLine2))
+        {
+            MonologueManager.PlayMonologue(postGhostLine2, postGhostLineDuration, true, true);
+            yield return new WaitForSeconds(postGhostLineDuration);
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = flashlightLightWasOn;
+        }
+
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(flashlightObjectWasActive);
+        }
+
+        if (flashlightToggleScript != null)
+        {
+            flashlightToggleScript.enabled = true;
+        }
     }
     
     private void DropItem(bool playDropSound = true)

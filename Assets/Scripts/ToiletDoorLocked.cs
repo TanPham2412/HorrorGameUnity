@@ -61,25 +61,7 @@ public class ToiletDoorLocked : MonoBehaviour
 
     void OnMouseExit()
     {
-        if (actionDisplay != null) actionDisplay.SetActive(true);
-        if (extraCross != null) extraCross.SetActive(true);
-
-        if (isOpen)
-        {
-            if (actionTextClose != null) actionTextClose.SetActive(true);
-            if (actionText != null) actionText.SetActive(false);
-        }
-        else
-        {
-            if (actionText != null) actionText.SetActive(true);
-            if (actionTextClose != null) actionTextClose.SetActive(false);
-        }
-
-        if (HasCrowbar() && !isUnlocked && !crowbarHintLinePlayed)
-        {
-            MonologueManager.PlayMonologue("Cửa đã bị kẹt cứng, cái này sẽ có ích.", 3.5f, true, true);
-            crowbarHintLinePlayed = true;
-        }
+        HidePrompts();
     }
 
     void ShowPrompt()
