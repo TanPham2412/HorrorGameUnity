@@ -8,6 +8,7 @@ public enum ItemType
     Key,
     GuardKey,
     VHSTape,
+    VHSOfficeTape,
     Flashlight,
     SafeCard,
     Crowbar
@@ -56,10 +57,17 @@ public class PickUpItem : MonoBehaviour
     public float blackoutDuration = 2f;
     public float ghostVisibleDuration = 1f;
     public float secondBlackoutDuration = 0.5f;
+
+    [Header("Pickup Monologue")]
+    public bool playPickupMonologue = false;
+    [TextArea(2, 4)] public string pickupMonologueLine;
+    public float pickupMonologueDuration = 4f;
+    public bool pickupLineAddsToLog = true;
     
     private float actualDistanceToPlayer;
     private static bool crowbarMonologuePlayed = false;
     private bool specialEffectTriggered = false;
+    private bool pickupMonologuePlayed = false;
     
     void Update()
     {
@@ -123,6 +131,8 @@ public class PickUpItem : MonoBehaviour
                 return GlobalInventory.hasGuardKey;
             case ItemType.VHSTape:
                 return GlobalInventory.hasVHSTape;
+            case ItemType.VHSOfficeTape:
+                return GlobalInventory.hasVHSOfficeTape;
             case ItemType.Flashlight:
                 return GlobalInventory.hasFlashlight;
             case ItemType.SafeCard:
@@ -192,6 +202,12 @@ public class PickUpItem : MonoBehaviour
         {
             specialEffectTriggered = true;
             StartCoroutine(HandlePickupEffects());
+        }
+
+        if (playPickupMonologue && !pickupMonologuePlayed && !string.IsNullOrWhiteSpace(pickupMonologueLine))
+        {
+            MonologueManager.PlayMonologue(pickupMonologueLine, pickupMonologueDuration, pickupLineAddsToLog, true);
+            pickupMonologuePlayed = true;
         }
         
         // Debug log
