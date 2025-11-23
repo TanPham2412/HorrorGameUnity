@@ -29,6 +29,7 @@ public class PlayCassette : MonoBehaviour
     private bool isPlaying = false; // Đang phát video
     private readonly HashSet<ItemType> monologuesQueuedForTapes = new();
     private readonly HashSet<ItemType> audioPlayedForTapes = new();
+    private readonly HashSet<ItemType> postSequenceTriggeredTapes = new();
 
     void Start()
     {
@@ -145,6 +146,7 @@ public class PlayCassette : MonoBehaviour
         }
 
         QueueCassetteMonologues(config);
+        StartCoroutine(HandlePostSequence(config));
     }
 
     private void QueueCassetteMonologues(TapeConfiguration config)
@@ -174,6 +176,66 @@ public class PlayCassette : MonoBehaviour
         if (!audioPlayedForTapes.Add(config.tapeItem)) return;
 
         breathingAudioSource.PlayOneShot(config.audioClip, config.audioVolume);
+    }
+
+    private IEnumerator HandlePostSequence(TapeConfiguration config)
+    {
+        if (config == null || !config.triggerPostSequence) yield break;
+        if (!postSequenceTriggeredTapes.Add(config.tapeItem)) yield break;
+
+        float waitTime = Mathf.Max(0f, GetTotalMonologueDuration(config) + config.postSequenceDelay);
+        if (waitTime > 0f)
+        {
+            yield return new WaitForSeconds(waitTime);
+        }
+
+        if (config.postSequenceAudioClip != null && breathingAudioSource != null)
+        {
+            breathingAudioSource.PlayOneShot(config.postSequenceAudioClip, config.postSequenceAudioVolume);
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.postSequenceMonologueText))
+        {
+            MonologueManager.PlayMonologue(
+                config.postSequenceMonologueText,
+                config.postSequenceMonologueDuration,
+                config.postSequenceLogToLog,
+                config.postSequencePreventDuplicate);
+        }
+
+        if (config.objectsToActivate != null)
+        {
+            foreach (var go in config.objectsToActivate)
+            {
+                if (go != null) go.SetActive(true);
+            }
+        }
+
+        if (config.objectsToDeactivate != null)
+        {
+            foreach (var go in config.objectsToDeactivate)
+            {
+                if (go != null) go.SetActive(false);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(config.postSequenceFlagKey))
+        {
+            StoryFlagManager.SetFlag(config.postSequenceFlagKey);
+        }
+    }
+
+    private float GetTotalMonologueDuration(TapeConfiguration config)
+    {
+        if (config == null || config.monologueLines == null) return 0f;
+        float total = 0f;
+        foreach (var line in config.monologueLines)
+        {
+            if (line == null) continue;
+            total += Mathf.Max(0f, line.duration);
+        }
+
+        return total;
     }
 
     private bool TryGetActiveTape(out TapeConfiguration config)
@@ -243,5 +305,18 @@ public class PlayCassette : MonoBehaviour
         public bool playAudioAfterViewing = true;
         public AudioClip audioClip;
         [Range(0f, 1f)] public float audioVolume = 1f;
+
+        [Header("Post Sequence (after monologues)")]
+        public bool triggerPostSequence = false;
+        public float postSequenceDelay = 0f;
+        public AudioClip postSequenceAudioClip;
+        [Range(0f, 1f)] public float postSequenceAudioVolume = 1f;
+        [TextArea(2, 5)] public string postSequenceMonologueText;
+        public float postSequenceMonologueDuration = 4f;
+        public bool postSequenceLogToLog = true;
+        public bool postSequencePreventDuplicate = true;
+        public GameObject[] objectsToActivate;
+        public GameObject[] objectsToDeactivate;
+        public string postSequenceFlagKey;
     }
 }

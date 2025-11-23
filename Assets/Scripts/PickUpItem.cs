@@ -332,6 +332,9 @@ public class PickUpItem : MonoBehaviour
         {
             flashlightToggleScript.enabled = true;
         }
+
+        StoryFlagManager.SetFlag("SafeCardSequenceCompleted");
+        AmbientMusicManager.Instance?.DisableRestroomMusic();
     }
     
     private void DropItem(bool playDropSound = true)
