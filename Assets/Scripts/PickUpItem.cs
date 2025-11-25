@@ -13,10 +13,10 @@ public enum ItemType
     SafeCard,
     Crowbar,
     RabbitDoll,
-    ImportantRelic1,
-    ImportantRelic2,
-    ImportantRelic3,
-    ImportantRelic4
+    Knife,
+    BowOfPoison,
+    MusicBox,
+    Chains
 }
 
 public class PickUpItem : MonoBehaviour
@@ -71,6 +71,8 @@ public class PickUpItem : MonoBehaviour
 
     [Header("Important Item Settings")]
     public bool isImportantItem = false;
+    [Tooltip("If true, capture the current RealItem local transform on Awake to reapply when equipping.")]
+    public bool autoCaptureImportantHandOffsets = true;
     public Vector3 importantItemHandLocalPosition = Vector3.zero;
     public Vector3 importantItemHandLocalEuler = Vector3.zero;
     public Vector3 importantItemHandLocalScale = Vector3.one;
@@ -79,6 +81,15 @@ public class PickUpItem : MonoBehaviour
     private static bool crowbarMonologuePlayed = false;
     private bool specialEffectTriggered = false;
     private bool pickupMonologuePlayed = false;
+    
+    private void Awake()
+    {
+        if (GlobalInventory.IsImportantItemType(itemType))
+        {
+            isImportantItem = true;
+        }
+
+    }
     
     void Update()
     {
@@ -392,12 +403,52 @@ public class PickUpItem : MonoBehaviour
 
     public void AttachImportantItemToHand(Transform handSlot)
     {
-        if (RealItem == null || handSlot == null) return;
+        if (RealItem == null) return;
 
-        RealItem.transform.SetParent(handSlot, false);
-        RealItem.transform.localPosition = importantItemHandLocalPosition;
-        RealItem.transform.localRotation = Quaternion.Euler(importantItemHandLocalEuler);
-        RealItem.transform.localScale = importantItemHandLocalScale;
+        Transform targetParent = handSlot != null ? handSlot : RealItem.transform.parent;
+
+        if (targetParent != null)
+        {
+            if (autoCaptureImportantHandOffsets)
+            {
+                CaptureImportantItemOffsets(targetParent);
+                autoCaptureImportantHandOffsets = false;
+            }
+
+            if (handSlot != null)
+            {
+                RealItem.transform.SetParent(handSlot, false);
+            }
+
+            RealItem.transform.localPosition = importantItemHandLocalPosition;
+            RealItem.transform.localRotation = Quaternion.Euler(importantItemHandLocalEuler);
+            RealItem.transform.localScale = importantItemHandLocalScale;
+        }
+    }
+
+    private void CaptureImportantItemOffsets(Transform referenceParent)
+    {
+        if (RealItem == null || referenceParent == null) return;
+
+        Transform realTransform = RealItem.transform;
+        importantItemHandLocalPosition = referenceParent.InverseTransformPoint(realTransform.position);
+        Quaternion relativeRotation = Quaternion.Inverse(referenceParent.rotation) * realTransform.rotation;
+        importantItemHandLocalEuler = relativeRotation.eulerAngles;
+        importantItemHandLocalScale = DivideVector(realTransform.lossyScale, referenceParent.lossyScale);
+    }
+
+    private static Vector3 DivideVector(Vector3 numerator, Vector3 denominator)
+    {
+        float SafeDiv(float a, float b)
+        {
+            return Mathf.Approximately(b, 0f) ? a : a / b;
+        }
+
+        return new Vector3(
+            SafeDiv(numerator.x, denominator.x),
+            SafeDiv(numerator.y, denominator.y),
+            SafeDiv(numerator.z, denominator.z)
+        );
     }
 
     private void SetPlayerFlashlightState(bool state)
