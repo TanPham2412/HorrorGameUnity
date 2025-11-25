@@ -149,24 +149,46 @@ public class PlayCassette : MonoBehaviour
         StartCoroutine(HandlePostSequence(config));
     }
 
+    [System.Serializable]
+    public class MonologueLine
+    {
+        [TextArea(2, 5)] public string text;
+        public float duration = 5f;
+    }
+
     private void QueueCassetteMonologues(TapeConfiguration config)
     {
         if (config == null || config.monologueLines == null || config.monologueLines.Count == 0) return;
 
         if (!monologuesQueuedForTapes.Add(config.tapeItem)) return;
 
+        float totalDuration = 0f;
+
         foreach (var line in config.monologueLines)
         {
             if (line == null || string.IsNullOrWhiteSpace(line.text)) continue;
-            MonologueManager.PlayMonologue(line.text, line.duration, config.logMonologuesToLog, config.preventDuplicate);
+            float duration = line.duration > 0f ? line.duration : 4f;
+            totalDuration += duration;
+            MonologueManager.PlayMonologue(line.text, duration, config.logMonologuesToLog, config.preventDuplicate);
+        }
+
+        if (config.lockPlayerDuringMonologues && totalDuration > 0f)
+        {
+            StartCoroutine(LockPlayerForDuration(totalDuration));
         }
     }
 
-    [System.Serializable]
-    public class MonologueLine
+    private IEnumerator LockPlayerForDuration(float duration)
     {
-        [TextArea(2, 5)] public string text;
-        public float duration = 5f;
+        if (playerMovementScript == null) yield break;
+
+        playerMovementScript.enabled = false;
+        if (crosshair != null) crosshair.SetActive(false);
+
+        yield return new WaitForSeconds(duration);
+
+        playerMovementScript.enabled = true;
+        if (crosshair != null) crosshair.SetActive(true);
     }
 
     private void TryPlayTapeAudio(TapeConfiguration config)
@@ -305,6 +327,7 @@ public class PlayCassette : MonoBehaviour
         public bool playAudioAfterViewing = true;
         public AudioClip audioClip;
         [Range(0f, 1f)] public float audioVolume = 1f;
+        public bool lockPlayerDuringMonologues = false;
 
         [Header("Post Sequence (after monologues)")]
         public bool triggerPostSequence = false;

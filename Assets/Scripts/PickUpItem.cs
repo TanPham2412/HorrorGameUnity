@@ -237,15 +237,7 @@ public class PickUpItem : MonoBehaviour
             light.enabled = false;
         }
 
-        if (playerFlashlightLight != null)
-        {
-            playerFlashlightLight.enabled = false;
-        }
-
-        if (playerFlashlightObject != null)
-        {
-            playerFlashlightObject.SetActive(false);
-        }
+        SetPlayerFlashlightState(false);
 
         yield return new WaitForSeconds(blackoutDuration);
 
@@ -256,6 +248,8 @@ public class PickUpItem : MonoBehaviour
             bool wasEnabled = i < previousStates.Count ? previousStates[i] : true;
             light.enabled = wasEnabled;
         }
+
+        SetPlayerFlashlightState(true);
 
 
         if (ghostJumpScare != null)
@@ -281,15 +275,7 @@ public class PickUpItem : MonoBehaviour
             light.enabled = false;
         }
 
-        if (playerFlashlightLight != null)
-        {
-            playerFlashlightLight.enabled = false;
-        }
-
-        if (playerFlashlightObject != null)
-        {
-            playerFlashlightObject.SetActive(false);
-        }
+        SetPlayerFlashlightState(false);
 
         yield return new WaitForSeconds(secondBlackoutDuration);
 
@@ -335,6 +321,19 @@ public class PickUpItem : MonoBehaviour
 
         StoryFlagManager.SetFlag("SafeCardSequenceCompleted");
         AmbientMusicManager.Instance?.DisableRestroomMusic();
+    }
+
+    private void SetPlayerFlashlightState(bool state)
+    {
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(state);
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = state;
+        }
     }
     
     private void DropItem(bool playDropSound = true)
