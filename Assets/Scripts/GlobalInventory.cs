@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+    using System.Collections.Generic;
 using UnityEngine;
 
 public class GlobalInventory : MonoBehaviour
@@ -12,6 +11,8 @@ public class GlobalInventory : MonoBehaviour
     public static bool hasFlashlight = false;
     public static bool hasSafeCard = false;
     public static bool hasCrowbar = false;
+
+    private static readonly HashSet<ItemType> importantItemsOwned = new();
 
     // Two-slot inventory system: flashlight + one regular item
     public static ItemType? currentRegularItem = null;  // Key, GuardKey, VHSTape, VHSOfficeTape, SafeCard, Crowbar
@@ -33,6 +34,12 @@ public class GlobalInventory : MonoBehaviour
         {
             return hasFlashlight;
         }
+
+        if (IsImportantItemType(itemType))
+        {
+            return importantItemsOwned.Contains(itemType);
+        }
+
         return currentRegularItem == itemType;
     }
 
@@ -45,22 +52,25 @@ public class GlobalInventory : MonoBehaviour
     {
         if (itemType == ItemType.Flashlight)
         {
-            // Flashlight goes to special slot
             hasFlashlight = true;
             flashlightScript = itemScript;
+            return;
         }
-        else
+
+        if (IsImportantItemType(itemType))
         {
-            // Other items go to regular slot (drop existing regular item if any)
-            if (currentRegularItem != null)
-            {
-                SetLegacyFlag(currentRegularItem.Value, false);
-            }
-            
-            currentRegularItem = itemType;
-            currentRegularItemScript = itemScript;
-            SetLegacyFlag(itemType, true);
+            SetImportantItemOwned(itemType, true);
+            return;
         }
+
+        if (currentRegularItem != null)
+        {
+            SetLegacyFlag(currentRegularItem.Value, false);
+        }
+
+        currentRegularItem = itemType;
+        currentRegularItemScript = itemScript;
+        SetLegacyFlag(itemType, true);
     }
 
     public static void ClearCurrentItem(ItemType itemType)
@@ -69,8 +79,16 @@ public class GlobalInventory : MonoBehaviour
         {
             hasFlashlight = false;
             flashlightScript = null;
+            return;
         }
-        else if (currentRegularItem == itemType)
+
+        if (IsImportantItemType(itemType))
+        {
+            SetImportantItemOwned(itemType, false);
+            return;
+        }
+
+        if (currentRegularItem == itemType)
         {
             SetLegacyFlag(currentRegularItem.Value, false);
             currentRegularItem = null;
@@ -83,6 +101,48 @@ public class GlobalInventory : MonoBehaviour
         return currentRegularItemScript;
     }
 
+    public static void ForceDropCurrentRegularItem()
+    {
+        if (currentRegularItemScript != null)
+        {
+            currentRegularItemScript.ForceDropFromInventory(true);
+        }
+    }
+
+    public static void SetImportantItemOwned(ItemType itemType, bool owned)
+    {
+        if (!IsImportantItemType(itemType)) return;
+
+        if (owned)
+        {
+            importantItemsOwned.Add(itemType);
+        }
+        else
+        {
+            importantItemsOwned.Remove(itemType);
+        }
+    }
+
+    public static bool IsImportantItemType(ItemType itemType)
+    {
+        switch (itemType)
+        {
+            case ItemType.RabbitDoll:
+            case ItemType.ImportantRelic1:
+            case ItemType.ImportantRelic2:
+            case ItemType.ImportantRelic3:
+            case ItemType.ImportantRelic4:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static IReadOnlyCollection<ItemType> GetImportantItems()
+    {
+        return importantItemsOwned;
+    }
+
     private static void ClearAllRegularItemFlags()
     {
         hasKey = false;
@@ -91,7 +151,6 @@ public class GlobalInventory : MonoBehaviour
         hasVHSOfficeTape = false;
         hasSafeCard = false;
         hasCrowbar = false;
-        // Don't clear flashlight here as it has its own slot
     }
 
     private static void SetLegacyFlag(ItemType itemType, bool value)
