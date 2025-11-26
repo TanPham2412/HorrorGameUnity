@@ -9228,6 +9228,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chains
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ac6e0590cd02103489e13799bb30d1c3,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 950979754093338906, guid: ac6e0590cd02103489e13799bb30d1c3,
         type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -20974,6 +20979,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: BowlOfPoison
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: a3855d42226124d41ba06fcefd4e3883,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -26035,6 +26045,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: MusicBox
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 300f44c8b45828a448b445c9067a22bb,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1701301799562459933, guid: 300f44c8b45828a448b445c9067a22bb,
         type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -30733,6 +30748,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Knife
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f2825c6b03da1be4ba772c3f7a2605f2,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

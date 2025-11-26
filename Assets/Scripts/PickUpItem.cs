@@ -272,6 +272,18 @@ public class PickUpItem : MonoBehaviour
         GlobalInventory.SetImportantItemOwned(itemType, true);
         ImportantItemManager.Instance.TryAddImportantItem(this);
 
+        if (triggerSpecialEffects && !specialEffectTriggered)
+        {
+            specialEffectTriggered = true;
+            StartCoroutine(HandlePickupEffects());
+        }
+
+        if (playPickupMonologue && !pickupMonologuePlayed && !string.IsNullOrWhiteSpace(pickupMonologueLine))
+        {
+            MonologueManager.PlayMonologue(pickupMonologueLine, pickupMonologueDuration, pickupLineAddsToLog, true);
+            pickupMonologuePlayed = true;
+        }
+
         Debug.Log("Picked up important item: " + itemType);
     }
 
