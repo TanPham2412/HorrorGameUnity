@@ -128,10 +128,10 @@ public class GlobalInventory : MonoBehaviour
         switch (itemType)
         {
             case ItemType.RabbitDoll:
-            case ItemType.ImportantRelic1:
-            case ItemType.ImportantRelic2:
-            case ItemType.ImportantRelic3:
-            case ItemType.ImportantRelic4:
+            case ItemType.Knife:
+            case ItemType.BowOfPoison:
+            case ItemType.MusicBox:
+            case ItemType.Chains:
                 return true;
             default:
                 return false;

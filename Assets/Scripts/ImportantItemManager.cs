@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,10 +10,21 @@ public class ImportantItemManager : MonoBehaviour
     [Range(1, 5)] public int maxImportantItems = 5;
     public Transform importantItemHandSlot;
     public KeyCode cycleKey = KeyCode.F;
+    [Tooltip("Optional pre-placed visuals that are enabled when their important item is equipped.")]
+    public List<ImportantItemHandVisual> presetHandVisuals = new();
 
     [Header("Debug")]
     [SerializeField] private List<PickUpItem> importantItems = new();
     [SerializeField] private int currentImportantIndex = -1;
+
+    private readonly Dictionary<ItemType, GameObject> visualLookup = new();
+
+    [Serializable]
+    public class ImportantItemHandVisual
+    {
+        public ItemType itemType;
+        public GameObject visualObject;
+    }
 
     private void Awake()
     {
@@ -22,6 +34,19 @@ public class ImportantItemManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        maxImportantItems = Mathf.Clamp(maxImportantItems, 1, 5);
+        importantItems.Clear();
+        currentImportantIndex = -1;
+
+        visualLookup.Clear();
+        foreach (var visual in presetHandVisuals)
+        {
+            if (visual == null || visual.visualObject == null) continue;
+            if (visualLookup.ContainsKey(visual.itemType)) continue;
+            visual.visualObject.SetActive(false);
+            visualLookup.Add(visual.itemType, visual.visualObject);
+        }
     }
 
     private void Update()
@@ -36,7 +61,14 @@ public class ImportantItemManager : MonoBehaviour
 
     public void TryAddImportantItem(PickUpItem item)
     {
-        if (item == null || importantItems.Contains(item)) return;
+        if (item == null) return;
+
+        CleanupInvalidEntries();
+
+        if (importantItems.Exists(existing => existing != null && existing.itemType == item.itemType))
+        {
+            return;
+        }
 
         if (importantItems.Count >= maxImportantItems)
         {
@@ -47,9 +79,10 @@ public class ImportantItemManager : MonoBehaviour
         importantItems.Add(item);
         PrepareItemForHand(item);
 
-        if (importantItems.Count == 1 && !GlobalInventory.HasRegularItem())
+        bool shouldAutoEquip = !GlobalInventory.HasRegularItem() && !HasImportantEquipped();
+        if (shouldAutoEquip)
         {
-            EquipImportantItem(0);
+            EquipImportantItem(importantItems.Count - 1);
         }
     }
 
@@ -61,6 +94,7 @@ public class ImportantItemManager : MonoBehaviour
         if (item != null)
         {
             item.SetHandItemActive(false);
+            TogglePresetVisual(item.itemType, false);
         }
         currentImportantIndex = -1;
     }
@@ -72,6 +106,8 @@ public class ImportantItemManager : MonoBehaviour
 
     private void CycleToNextImportantItem()
     {
+        CleanupInvalidEntries();
+
         if (importantItems.Count == 0) return;
 
         // Nếu đang cầm item thường -> bắt buộc drop trước
@@ -110,6 +146,7 @@ public class ImportantItemManager : MonoBehaviour
             if (currentItem != null)
             {
                 currentItem.SetHandItemActive(false);
+                TogglePresetVisual(currentItem.itemType, false);
             }
         }
 
@@ -118,7 +155,10 @@ public class ImportantItemManager : MonoBehaviour
         if (newItem != null)
         {
             PrepareItemForHand(newItem);
-            newItem.SetHandItemActive(true);
+            if (!TogglePresetVisual(newItem.itemType, true))
+            {
+                newItem.SetHandItemActive(true);
+            }
         }
     }
 
@@ -126,12 +166,50 @@ public class ImportantItemManager : MonoBehaviour
     {
         if (item == null) return;
 
+        if (visualLookup.ContainsKey(item.itemType))
+        {
+            item.SetHandItemActive(false);
+            return;
+        }
+
+        if (item.RealItem == null)
+        {
+            Debug.LogWarning($"ImportantItemManager: {item.name} is missing its RealItem reference.");
+            return;
+        }
+
         if (importantItemHandSlot != null)
         {
             item.AttachImportantItemToHand(importantItemHandSlot);
         }
 
         item.SetHandItemActive(false);
+    }
+
+    private void CleanupInvalidEntries()
+    {
+        bool removedAny = false;
+        for (int i = importantItems.Count - 1; i >= 0; i--)
+        {
+            if (importantItems[i] == null)
+            {
+                importantItems.RemoveAt(i);
+                removedAny = true;
+            }
+        }
+
+        if (!removedAny)
+        {
+            return;
+        }
+
+        if (importantItems.Count == 0)
+        {
+            currentImportantIndex = -1;
+            return;
+        }
+
+        currentImportantIndex = Mathf.Clamp(currentImportantIndex, -1, importantItems.Count - 1);
     }
 
     public bool TryGetCurrentImportantHand(out PickUpItem item)
@@ -144,5 +222,16 @@ public class ImportantItemManager : MonoBehaviour
 
         item = null;
         return false;
+    }
+
+    private bool TogglePresetVisual(ItemType itemType, bool visible)
+    {
+        if (!visualLookup.TryGetValue(itemType, out var visual) || visual == null)
+        {
+            return false;
+        }
+
+        visual.SetActive(visible);
+        return true;
     }
 }
