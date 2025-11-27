@@ -42,6 +42,8 @@ namespace StarterAssets
 		public float GroundedRadius = 0.5f;
 		[Tooltip("What layers the character uses as ground")]
 		public LayerMask GroundLayers;
+		[Tooltip("Maximum angle (in degrees) that still counts as walkable ground")]
+		public float GroundedAngleThreshold = 65f;
 
 		[Header("Cinemachine")]
 		[Tooltip("The follow target set in the Cinemachine Virtual Camera that the camera will follow")]
@@ -135,9 +137,26 @@ namespace StarterAssets
 
 		private void GroundedCheck()
 		{
-			// set sphere position, with offset
 			Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
-			Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+			bool sphereHit = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+
+			if (!sphereHit)
+			{
+				Grounded = false;
+				return;
+			}
+
+			Vector3 rayOrigin = transform.position + Vector3.up * 0.1f;
+			float rayLength = GroundedRadius - GroundedOffset + 0.5f;
+			if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, rayLength, GroundLayers, QueryTriggerInteraction.Ignore))
+			{
+				float angle = Vector3.Angle(hit.normal, Vector3.up);
+				Grounded = angle <= GroundedAngleThreshold;
+			}
+			else
+			{
+				Grounded = false;
+			}
 		}
 
 		private void CameraRotation()
@@ -227,6 +246,8 @@ namespace StarterAssets
 				{
 					// the square root of H * -2 * G = how much velocity needed to reach desired height
 					_verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+					// require the player to release the jump button before another jump
+					_input.jump = false;
 				}
 
 				// jump timeout

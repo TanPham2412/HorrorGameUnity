@@ -1,11 +1,15 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Audio; // Cần cho AudioMixer
+
 public class MainMenuManager : MonoBehaviour
 {
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject loadGamePanel;
-    [SerializeField] private string sceneToLoad = "SampleScene";
+    [SerializeField] private string sceneToLoad = "Scene_TruongHoc_Dem1";
+    [SerializeField] private AudioMixer mainMixer;
+    [SerializeField] private Slider volumeSlider;
 
     public void OnNewGameButton()
     {
@@ -37,7 +41,20 @@ public class MainMenuManager : MonoBehaviour
             settingsPanel.SetActive(false);
         }
     }
+    
+    public void SetMasterVolume(float volume)
+    {
+        float dbValue = Mathf.Log10(volume) * 20;
 
+        mainMixer.SetFloat("MasterVolume", dbValue);
+    }
+    void Start()
+    {
+        if (volumeSlider != null)
+        {
+            SetMasterVolume(volumeSlider.value);
+        }
+    }
     public void OnLoadGameBackButton()
     {
         if (loadGamePanel != null)
