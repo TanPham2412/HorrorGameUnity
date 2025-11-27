@@ -14699,12 +14699,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 869208188}
   serializedVersion: 2
-  m_LocalRotation: {x: 5.6428014e-14, y: 1, z: 0.000000037748947, w: 0.0000014007092}
-  m_LocalPosition: {x: -0.018749952, y: -0.11094005, z: -0.075855285}
+  m_LocalRotation: {x: 3.5527137e-15, y: 0.7071068, z: -0, w: 0.70710677}
+  m_LocalPosition: {x: 1.53, y: -0.198, z: -0.687}
   m_LocalScale: {x: -0.22000003, y: -0.049999997, z: -0.14000002}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 659362400}
+  m_Father: {fileID: 1949604498}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &869208190
 MonoBehaviour:
@@ -20189,7 +20189,7 @@ MonoBehaviour:
   openAnimationName: SafeDoorOpen
   openSound: {fileID: 435671019}
   requiresKeycard: 1
-  requiredItem: 4
+  requiredItem: 5
   keypadPanel: {fileID: 1847139308}
   keypadInput: {fileID: 1908066542}
   correctCode: 0308
@@ -27272,14 +27272,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1006927558}
-    - targetCorrespondingSourceObject: {fileID: 8610646024907013602, guid: beef3bcde1610f04aa96275436147bb9,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1844699265}
-    - targetCorrespondingSourceObject: {fileID: 8610646024907013602, guid: beef3bcde1610f04aa96275436147bb9,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 869208189}
     - targetCorrespondingSourceObject: {fileID: 8602351998808744046, guid: beef3bcde1610f04aa96275436147bb9,
         type: 3}
       insertIndex: -1
@@ -28481,12 +28473,12 @@ PrefabInstance:
     - target: {fileID: 2091016013623473006, guid: cd5f8876763362d4f890c49198580d44,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.7071068
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2091016013623473006, guid: cd5f8876763362d4f890c49198580d44,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.7071068
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2091016013623473006, guid: cd5f8876763362d4f890c49198580d44,
         type: 3}
@@ -28496,7 +28488,7 @@ PrefabInstance:
     - target: {fileID: 2091016013623473006, guid: cd5f8876763362d4f890c49198580d44,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 90
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4092943236764309101, guid: cd5f8876763362d4f890c49198580d44,
         type: 3}
@@ -31455,12 +31447,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1844699264}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.70710135, y: -0.0027777255, z: -0.0027777583, w: 0.7071014}
-  m_LocalPosition: {x: -0.008700132, y: -0.13938119, z: -0.09159991}
-  m_LocalScale: {x: 68.66025, y: 51.339725, z: 100.00003}
+  m_LocalRotation: {x: -0.4980327, y: -0.50195956, z: -0.5019596, w: 0.49803275}
+  m_LocalPosition: {x: 1.53, y: -0.198, z: -0.687}
+  m_LocalScale: {x: 68.66025, y: 51.339733, z: 100.00007}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 659362400}
+  m_Father: {fileID: 1949604498}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &1844699266
 MeshRenderer:
@@ -33635,6 +33627,8 @@ Transform:
   - {fileID: 548152605}
   - {fileID: 1682486353}
   - {fileID: 870581726}
+  - {fileID: 1844699265}
+  - {fileID: 869208189}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1951977582
