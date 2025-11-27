@@ -5,6 +5,7 @@ using UnityEngine;
 public class ImportantItemManager : MonoBehaviour
 {
     public static ImportantItemManager Instance { get; private set; }
+    public static event Action OnAllImportantItemsCollected;
 
     [Header("Settings")]
     [Range(1, 5)] public int maxImportantItems = 5;
@@ -83,6 +84,11 @@ public class ImportantItemManager : MonoBehaviour
         if (shouldAutoEquip)
         {
             EquipImportantItem(importantItems.Count - 1);
+        }
+
+        if (importantItems.Count >= maxImportantItems)
+        {
+            OnAllImportantItemsCollected?.Invoke();
         }
     }
 

@@ -39,6 +39,7 @@ public class DiaryImportantItemUnlocker : MonoBehaviour
         if (!string.Equals(openedNoteName, diaryNoteName, StringComparison.OrdinalIgnoreCase)) return;
 
         unlocked = true;
+        StoryFlagManager.SetFlag("DiaryImportantUnlocked");
         SetObjectsActive(true);
 
         if (destroyAfterUnlock)
