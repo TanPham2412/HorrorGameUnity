@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -5,6 +6,8 @@ using UnityEngine.Video;
 
 public class MagicActive : MonoBehaviour
 {
+    public static event Action SuccessVideoStarted;
+
     [Header("UI References")]
     public float TheDistance;
     public GameObject ActionDisplay;
@@ -179,6 +182,8 @@ public class MagicActive : MonoBehaviour
                 yield return new WaitForSeconds(successVideoDelayAfterMonologue);
             }
 
+            MusicTrigger.StopAllMachineRoomAudio();
+            SuccessVideoStarted?.Invoke();
             yield return PlayVideoIfConfigured(successVideoConfig);
             yield return ShowCredits(successCredits);
         }
@@ -326,21 +331,24 @@ public class MagicActive : MonoBehaviour
             yield break;
         }
 
-        foreach (var slide in config.slides)
+        for (int i = 0; i < config.slides.Length; i++)
         {
+            var slide = config.slides[i];
             if (slide == null || slide.slideObject == null)
             {
                 continue;
             }
 
             slide.slideObject.SetActive(true);
+            PlaySlideAnimation(slide);
             float waitTime = Mathf.Max(0f, slide.displayDuration);
-            if (waitTime > 0f)
+            bool isLastSlide = i == config.slides.Length - 1;
+            if (!isLastSlide && waitTime > 0f)
             {
                 yield return new WaitForSeconds(waitTime);
             }
 
-            if (config.deactivateSlideAfterDelay)
+            if (!isLastSlide && config.deactivateSlideAfterDelay)
             {
                 slide.slideObject.SetActive(false);
             }
@@ -360,6 +368,27 @@ public class MagicActive : MonoBehaviour
             }
 
             yield return WaitForLeftClickAndLoadScene(config.returnSceneName);
+        }
+    }
+
+    private void PlaySlideAnimation(EndCreditSlide slide)
+    {
+        if (slide == null || slide.slideObject == null)
+        {
+            return;
+        }
+
+        var animation = slide.slideObject.GetComponent<Animation>();
+        if (animation != null)
+        {
+            animation.Stop();
+            animation.Play();
+        }
+
+        var animator = slide.slideObject.GetComponent<Animator>();
+        if (animator != null)
+        {
+            animator.Play(0, 0, 0f);
         }
     }
 
