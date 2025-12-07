@@ -14,14 +14,14 @@ public class DoorKey : MonoBehaviour
 
     [Header("Door Settings")]
     public DoorType doorType = DoorType.GenericDoor;
-    
+
     [Header("Interaction Settings")]
     public float TheDistance;
     public GameObject ActionDisplay;
     public GameObject ActionText;
     public GameObject ActionText2;
     public GameObject LockedText;
-    [TextArea(2,4)] public string lockedMonologue = "Cánh cửa đã bị khóa rồi, mình phải đi tìm chìa khóa, có lẽ nó ở trong phòng bảo vệ.";
+    [TextArea(2, 4)] public string lockedMonologue = "Cánh cửa đã bị khóa rồi, mình phải đi tìm chìa khóa, có lẽ nó ở trong phòng bảo vệ.";
     public float lockedMonologueDuration = 4f;
     public bool lockedMonologueAddsToLog = false;
     public GameObject Door;
@@ -66,11 +66,7 @@ public class DoorKey : MonoBehaviour
         }
         else
         {
-            ExtraCross.SetActive(false);
-            ActionDisplay.SetActive(false);
-            ActionText.SetActive(false);
-            ActionText2.SetActive(false);
-            LockedText.SetActive(false);
+            HideAllDoorUI();
         }
         if (Input.GetButtonDown("Action"))
         {
@@ -90,12 +86,7 @@ public class DoorKey : MonoBehaviour
 
     void OnMouseExit()
     {
-        ExtraCross.SetActive(false);
-        ActionDisplay.SetActive(false);
-        ActionText.SetActive(false);
-        ActionText2.SetActive(false);
-        LockedText.SetActive(false);
-        NameObject.SetActive(false);
+        HideAllDoorUI();
     }
 
     IEnumerator OpenTheDoor()
@@ -120,7 +111,7 @@ public class DoorKey : MonoBehaviour
         doorIsOpen = false;
         yield return new WaitForSeconds(1f);
     }
-    
+
     private bool HasRequiredKey()
     {
         switch (doorType)
@@ -130,7 +121,7 @@ public class DoorKey : MonoBehaviour
             case DoorType.GuardRoom:
                 return GlobalInventory.hasGuardKey;
             case DoorType.OfficeDoor:
-                return GlobalInventory.hasOfficeKey || GlobalInventory.hasGuardKey;
+                return GlobalInventory.hasOfficeKey;
             default:
                 return false;
         }
@@ -152,9 +143,35 @@ public class DoorKey : MonoBehaviour
         }
     }
 
+    public void ForceCloseAndDisableInteraction()
+    {
+        StartCoroutine(ForceCloseAndDisableRoutine());
+    }
+
+    private IEnumerator ForceCloseAndDisableRoutine()
+    {
+        if (doorIsOpen)
+        {
+            yield return StartCoroutine(CloseTheDoor());
+        }
+
+        HideAllDoorUI();
+        enabled = false;
+    }
+
     private void MaybePlayLockedMonologue()
     {
         if (string.IsNullOrWhiteSpace(lockedMonologue)) return;
         MonologueManager.PlayMonologue(lockedMonologue, lockedMonologueDuration > 0 ? lockedMonologueDuration : 4f, lockedMonologueAddsToLog, true);
+    }
+
+    private void HideAllDoorUI()
+    {
+        if (ExtraCross != null) ExtraCross.SetActive(false);
+        if (ActionDisplay != null) ActionDisplay.SetActive(false);
+        if (ActionText != null) ActionText.SetActive(false);
+        if (ActionText2 != null) ActionText2.SetActive(false);
+        if (LockedText != null) LockedText.SetActive(false);
+        if (NameObject != null) NameObject.SetActive(false);
     }
 }

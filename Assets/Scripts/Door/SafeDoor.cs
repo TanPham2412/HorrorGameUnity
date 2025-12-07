@@ -41,8 +41,6 @@ public class SafeDoor : MonoBehaviour
     private bool hasPlayedHintLine;
     private bool isFocused;
     private bool isKeypadActive;
-    private bool previousCursorVisible;
-    private CursorLockMode previousCursorLock;
 
     void Awake()
     {
@@ -213,11 +211,6 @@ public class SafeDoor : MonoBehaviour
         if (playerMovementScript != null) playerMovementScript.enabled = false;
         if (crosshair != null) crosshair.SetActive(false);
 
-        previousCursorLock = Cursor.lockState;
-        previousCursorVisible = Cursor.visible;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-
         keypadInput.ActivateInputField();
     }
 
@@ -237,9 +230,6 @@ public class SafeDoor : MonoBehaviour
 
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         if (crosshair != null) crosshair.SetActive(true);
-
-        Cursor.lockState = previousCursorLock;
-        Cursor.visible = previousCursorVisible;
 
         isKeypadActive = false;
     }

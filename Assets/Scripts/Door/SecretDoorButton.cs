@@ -22,6 +22,7 @@ public class SecretDoorButton : MonoBehaviour
     [SerializeField] private string completionFlag = "ImportantItemsCutscenePlayed";
     [SerializeField] private float disableDelay = 0.15f;
     [SerializeField] private GameObject[] visualsToToggle;
+    [SerializeField] private bool allowRendererToggle = false;
     [Header("Activation Control")]
     [SerializeField] private bool disableObjectUntilCutsceneComplete = true;
     [SerializeField] private GameObject activationTargetOverride;
@@ -40,6 +41,17 @@ public class SecretDoorButton : MonoBehaviour
 
         interactionCollider = GetComponent<Collider>();
         cachedRenderers = GetComponentsInChildren<Renderer>(true);
+
+        if (!allowRendererToggle && cachedRenderers != null)
+        {
+            foreach (var renderer in cachedRenderers)
+            {
+                if (renderer != null)
+                {
+                    renderer.enabled = false;
+                }
+            }
+        }
 
         if (hideUntilUnlocked)
         {
@@ -88,9 +100,14 @@ public class SecretDoorButton : MonoBehaviour
             visible = true;
         }
 
+        if (activationTarget != null)
+        {
+            activationTarget.SetActive(visible);
+        }
+
         if (interactionCollider != null)
         {
-            interactionCollider.enabled = visible;
+            interactionCollider.enabled = visible && activationTarget != null ? activationTarget.activeInHierarchy : visible;
         }
 
         if (visualsToToggle != null && visualsToToggle.Length > 0)
@@ -100,7 +117,7 @@ public class SecretDoorButton : MonoBehaviour
                 if (target != null) target.SetActive(visible);
             }
         }
-        else if (cachedRenderers != null)
+        else if (allowRendererToggle && cachedRenderers != null)
         {
             foreach (var renderer in cachedRenderers)
             {
