@@ -1,27 +1,47 @@
 ﻿using UnityEngine;
 
-public class ActivateGhostTrigger : MonoBehaviour
+public class GhostActivator : MonoBehaviour
 {
-    // Cờ (flag) để đảm bảo nó chỉ chạy 1 lần
-    private bool hasBeenTriggered = false;
+    [Header("Setup")]
+    [Tooltip("Kéo con Ghost vào đây")]
+    public GhostAI_Hybrid ghostScript;
 
-    // Hàm này tự động chạy khi có vật gì đó đi vào
-    private void OnTriggerEnter(Collider other)
+    [Tooltip("Nếu tích, Ghost sẽ kích hoạt khi Player chạm vào vùng Trigger")]
+    public bool activateOnTriggerEnter = true;
+
+    [Tooltip("Chỉ kích hoạt 1 lần duy nhất")]
+    public bool triggerOnce = true;
+
+    private bool hasTriggered = false;
+
+    // Tự động tìm Ghost nếu quên kéo
+    void Start()
     {
-        // Kiểm tra xem có phải Player đi vào không
-        // (Và nó chưa được kích hoạt)
-        if (other.CompareTag("Player") && !hasBeenTriggered)
+        if (ghostScript == null)
         {
-            hasBeenTriggered = true; // Đánh dấu là đã kích hoạt
+            ghostScript = FindObjectOfType<GhostAI_Hybrid>();
+        }
+    }
 
-            // Kích hoạt con Ma!
-            GameManager.ghostIsActive = true;
+    // Dùng cho Trigger Box (đi qua cửa là ma xuất hiện)
+    void OnTriggerEnter(Collider other)
+    {
+        if (activateOnTriggerEnter && other.CompareTag("Player"))
+        {
+            Activate();
+        }
+    }
 
-            // In ra Console để báo
-            Debug.Log("!!! GHOST ĐÃ ĐƯỢC KÍCH HOẠT !!!");
+    // Hàm này có thể gọi từ nút bấm hoặc sự kiện nhặt đồ khác
+    public void Activate()
+    {
+        if (triggerOnce && hasTriggered) return;
 
-            // (Tùy chọn) Xóa vật phẩm này đi
-            Destroy(gameObject);
+        if (ghostScript != null)
+        {
+            ghostScript.ActivateGhost();
+            hasTriggered = true;
+            Debug.Log("Activator: Đã gọi Ghost dậy!");
         }
     }
 }

@@ -230,6 +230,65 @@ public class ImportantItemManager : MonoBehaviour
         return false;
     }
 
+    public bool RemoveImportantItem(PickUpItem item)
+    {
+        if (item == null) return false;
+
+        int index = importantItems.IndexOf(item);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        if (currentImportantIndex == index)
+        {
+            if (importantItems[currentImportantIndex] != null)
+            {
+                importantItems[currentImportantIndex].SetHandItemActive(false);
+                TogglePresetVisual(importantItems[currentImportantIndex].itemType, false);
+            }
+            currentImportantIndex = -1;
+        }
+
+        importantItems.RemoveAt(index);
+
+        if (currentImportantIndex > index)
+        {
+            currentImportantIndex--;
+        }
+
+        if (importantItems.Count == 0)
+        {
+            currentImportantIndex = -1;
+        }
+        else
+        {
+            currentImportantIndex = Mathf.Clamp(currentImportantIndex, -1, importantItems.Count - 1);
+        }
+
+        return true;
+    }
+
+    public void RestoreImportantItemFromSlot(PickUpItem item)
+    {
+        if (item == null) return;
+        CleanupInvalidEntries();
+
+        if (importantItems.Contains(item))
+        {
+            return;
+        }
+
+        importantItems.Add(item);
+        PrepareItemForHand(item);
+
+        bool shouldEquip = !HasImportantEquipped();
+        if (shouldEquip)
+        {
+            EquipImportantItem(importantItems.Count - 1);
+        }
+    }
+
     private bool TogglePresetVisual(ItemType itemType, bool visible)
     {
         if (!visualLookup.TryGetValue(itemType, out var visual) || visual == null)

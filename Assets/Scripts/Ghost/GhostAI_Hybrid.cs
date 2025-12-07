@@ -1,250 +1,239 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class GhostAI_Hybrid : MonoBehaviour
 {
-    // === THAY ĐỔI: Dùng Animation cũ thay vì Animator ===
-    private Animation legacyAnimation;
+    [Header("Activation")]
+    public bool isAIActive = false;
 
-    [Header("Legacy Animation Settings")]
-    public string walkClipName = "GltfAnimation 0"; // Tên clip đi bộ
-    public string jumpscareClipName = "";           // Tên clip hù (để trống nếu không có)
+    [Header("Animation")]
+    public Animation legacyAnimation;
+    public string walkClipName = "GltfAnimation 0";
 
-    // === CÀI ĐẶT CHUNG ===
+    [Header("Patrol")]
+    public string waypointPathName = "WaypointPath";
+    public List<Transform> waypoints = new List<Transform>();
+    public float patrolSpeed = 2f;
+    public float waitTimeAtPoint = 2f;
+
+    [Header("Detection (Quét Vùng)")]
+    public float visionRange = 15f;
+    [Range(0, 360)] public float visionAngle = 140f;
+    public float chaseSpeed = 5f;
+
+    [Header("Eyes / Target Offsets")]
+    [Tooltip("Nếu gán, tia nhìn sẽ lấy vị trí mắt từ Transform này.")]
+    public Transform eyePoint;
+    [Tooltip("Điều chỉnh thêm độ cao so với mắt mặc định (1.4m) nếu không có eyePoint.")]
+    public float eyeOffset = 0.2f;
+    [Tooltip("Độ cao (tính từ pivot của player) để raycast nhắm tới.")]
+    public float playerTargetHeight = 1.2f;
+
+    // CHỈ CHỌN LỚP: Default, Wall... (KHÔNG CHỌN PLAYER)
+    public LayerMask detectionLayer;
+
+    [Header("Attack")]
+    public float attackRange = 2.0f;
+
     private NavMeshAgent agent;
     private Transform player;
     private PlayerStatus playerStatus;
-
-    // === CÁC TRẠNG THÁI AI ===
-    private enum State { Patrolling, Searching, Chasing, Attacking }
-    private State currentState;
-
-    // === CÀI ĐẶT PATROL ===
-    [Header("Patrol")]
-    public List<Transform> waypoints;
-    public float patrolSpeed = 2f;
-    public float waitTimeAtPoint = 2f;
-    private int currentWaypointIndex = 0;
     private float patrolTimer = 0f;
+    private int currentWaypointIndex = 0;
 
-    // === CÀI ĐẶT PHÁT HIỆN ===
-    [Header("Detection")]
-    public float visionRange = 10f;
-    public float visionAngle = 90f;
-    public float hearingRange = 20f;
-    public float chaseSpeed = 5f;
-    private Vector3 lastHeardPosition;
+    // Debug Raycast
+    private Vector3 debugRayStart;
+    private Vector3 debugRayEnd;
+    private Color debugRayColor = Color.white;
 
-    // === CÀI ĐẶT TẤN CÔNG ===
-    [Header("Attack")]
-    public float attackRange = 1.5f;
-    public LayerMask obstacleMask;
+    private enum State { Patrolling, Chasing, Attacking }
+    [SerializeField] private State currentState;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-
-        // === THAY ĐỔI: Tìm component Animation ===
         legacyAnimation = GetComponentInChildren<Animation>();
 
-        // Tự động chạy animation đi bộ ngay khi bắt đầu
         if (legacyAnimation != null && !string.IsNullOrEmpty(walkClipName))
-        {
-            legacyAnimation.Play(walkClipName);
-        }
-        // =========================================
+            legacyAnimation.wrapMode = WrapMode.Loop;
 
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (playerObject != null)
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
         {
-            player = playerObject.transform;
-            playerStatus = playerObject.GetComponent<PlayerStatus>();
+            player = playerObj.transform;
+            playerStatus = playerObj.GetComponent<PlayerStatus>();
+            if (playerStatus == null) playerStatus = playerObj.GetComponentInChildren<PlayerStatus>();
+        }
+
+        if (waypoints.Count == 0)
+        {
+            GameObject path = GameObject.Find(waypointPathName);
+            if (path != null) foreach (Transform child in path.transform) waypoints.Add(child);
         }
 
         currentState = State.Patrolling;
-
-        if (!EnsureAgentOnNavMesh()) return;
-
-        if (waypoints.Count > 0)
-        {
-            agent.speed = patrolSpeed;
-            TrySetDestination(waypoints[currentWaypointIndex].position);
-        }
+        if (!isAIActive) agent.isStopped = true;
+        else MoveToNextWaypoint();
     }
 
     void Update()
     {
-        if (!GameManager.ghostIsActive)
-        {
-            agent.isStopped = true;
-            return;
-        }
-        if (agent.isStopped && currentState != State.Attacking)
+        if (!isAIActive) { if (agent.isOnNavMesh) agent.isStopped = true; return; }
+
+        if (agent.isOnNavMesh && agent.isStopped && currentState != State.Attacking)
         {
             agent.isStopped = false;
-            // Đảm bảo animation đi bộ đang chạy
-            if (legacyAnimation != null && !legacyAnimation.isPlaying)
-                legacyAnimation.Play(walkClipName);
+            if (legacyAnimation != null && !legacyAnimation.isPlaying) legacyAnimation.Play(walkClipName);
         }
 
         if (player == null) return;
 
-        bool canSeePlayer = CanSeePlayer();
+        bool canSee = CheckFieldOfView();
+        if (canSee)
+        {
+            Debug.Log("GhostAI_Hybrid: Player detected, switching to chase if needed.");
+        }
 
         switch (currentState)
         {
             case State.Patrolling:
-                HandlePatrolling(canSeePlayer);
-                break;
-            case State.Searching:
-                HandleSearching(canSeePlayer);
+                if (canSee) currentState = State.Chasing;
+                else PatrolLogic();
                 break;
             case State.Chasing:
-                HandleChasing(canSeePlayer);
+                ChaseLogic(canSee);
                 break;
-            case State.Attacking:
-                HandleAttacking();
-                break;
+            case State.Attacking: break;
         }
     }
 
-    // ... (Các hàm HandlePatrolling, Searching, Chasing giữ nguyên như cũ) ...
-    // Để ngắn gọn, tôi chỉ viết lại hàm HandleAttacking có thay đổi
+    public void ActivateGhost()
+    {
+        if (isAIActive) return;
+        isAIActive = true;
+        agent.isStopped = false;
+        MoveToNextWaypoint();
+    }
 
-    void HandlePatrolling(bool canSeePlayer)
+    // === ZME FIX: LOGIC NHÌN LINH HOẠT ===
+    bool CheckFieldOfView()
+    {
+        if (player == null) return false;
+
+        Vector3 ghostEyes = eyePoint != null
+            ? eyePoint.position
+            : transform.position + Vector3.up * (1.4f + eyeOffset);
+        Vector3 targetCenter = player.position + Vector3.up * playerTargetHeight; // Ngực Player
+
+        float distanceToPlayer = Vector3.Distance(ghostEyes, targetCenter);
+        if (distanceToPlayer > visionRange) return false;
+
+        Vector3 facingDir = eyePoint != null ? eyePoint.forward : transform.forward;
+        Vector3 dirToPlayer = (targetCenter - ghostEyes).normalized;
+
+        // Vẽ tia debug liên tục để bạn dễ chỉnh
+        debugRayStart = ghostEyes;
+
+        if (Vector3.Angle(facingDir, dirToPlayer) < visionAngle / 2)
+        {
+            int rayMask = detectionLayer;
+            // Luôn cho phép nhìn thấy Player cho dù dropdown không tick
+            rayMask |= 1 << player.gameObject.layer;
+            // Bỏ layer của chính con ma để tia không bị collider bản thân chặn
+            rayMask &= ~(1 << gameObject.layer);
+
+            RaycastHit[] hits = Physics.RaycastAll(ghostEyes, dirToPlayer, distanceToPlayer, rayMask, QueryTriggerInteraction.Ignore);
+            if (hits.Length > 1)
+                Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null) continue;
+                if (hit.collider.transform.root == transform) continue; // bỏ qua collider của ma
+
+                debugRayEnd = hit.point;
+                if (hit.collider.CompareTag("Player"))
+                {
+                    debugRayColor = Color.green; // THẤY!
+                    return true;
+                }
+
+                debugRayColor = Color.red; // BỊ CHẶN
+                return false;
+            }
+
+            // Không trúng gì hoặc chỉ trúng chính mình -> coi như thấy Player
+            debugRayEnd = ghostEyes + dirToPlayer * distanceToPlayer;
+            debugRayColor = Color.green;
+            return true;
+        }
+        else
+        {
+            debugRayEnd = ghostEyes + facingDir * 2f;
+            debugRayColor = Color.yellow; // Ngoài góc nhìn
+        }
+        return false;
+    }
+
+    void PatrolLogic()
     {
         agent.speed = patrolSpeed;
-        if (canSeePlayer) { patrolTimer = 0f; ChangeState(State.Chasing); return; }
         if (waypoints.Count == 0) return;
-
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.5f)
+        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.1f)
         {
             patrolTimer += Time.deltaTime;
             if (patrolTimer >= waitTimeAtPoint)
             {
                 currentWaypointIndex = (currentWaypointIndex + 1) % waypoints.Count;
-                TrySetDestination(waypoints[currentWaypointIndex].position);
+                MoveToNextWaypoint();
                 patrolTimer = 0f;
             }
         }
-        else patrolTimer = 0f;
     }
 
-    void HandleSearching(bool canSeePlayer)
-    {
-        agent.speed = chaseSpeed * 0.75f;
-        TrySetDestination(lastHeardPosition);
-
-        if (canSeePlayer) { ChangeState(State.Chasing); return; }
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.5f)
-            ChangeState(State.Patrolling);
-    }
-
-    void HandleChasing(bool canSeePlayer)
+    void ChaseLogic(bool canSee)
     {
         agent.speed = chaseSpeed;
-        TrySetDestination(player.position);
-
-        if (!canSeePlayer)
-        {
-            Debug.Log("Mất dấu"); ChangeState(State.Patrolling); TrySetDestination(waypoints[currentWaypointIndex].position); return;
-
-        }
-        if (Vector3.Distance(transform.position, player.position) < attackRange)
-            ChangeState(State.Attacking);
+        if (agent.isOnNavMesh) agent.SetDestination(player.position);
+        float dist = Vector3.Distance(transform.position, player.position);
+        if (dist <= attackRange) { StartAttack(); return; }
+        if (!canSee && dist > visionRange * 1.2f) { currentState = State.Patrolling; MoveToNextWaypoint(); }
     }
 
-    void HandleAttacking()
+    void StartAttack()
     {
-        agent.isStopped = true; // Dừng ma lại
-
-        // --- KÍCH HOẠT VIDEO JUMPSCARE ---
-        if (JumpscareManager.instance != null)
-        {
-            JumpscareManager.instance.TriggerJumpscare();
-        }
-        else
-        {
-            // Dự phòng nếu quên tạo JumpscareManager thì vẫn reset game
-            if (playerStatus != null) playerStatus.Die();
-        }
-        // ---------------------------------
-
-        // Không cần gọi playerStatus.Die() ở đây nữa
-        // Vì JumpscareManager sẽ lo việc đó sau khi video hết.
-
-        ChangeState(State.Patrolling);
+        currentState = State.Attacking;
+        if (agent.isOnNavMesh) agent.isStopped = true;
+        if (playerStatus != null) playerStatus.Die();
+        else UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 
-    // ... (Các hàm tiện ích giữ nguyên) ...
-    bool CanSeePlayer()
+    void MoveToNextWaypoint()
     {
-        if (player == null) return false;
-        float distance = Vector3.Distance(transform.position, player.position);
-        if (distance > visionRange) return false;
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        float angle = Vector3.Angle(transform.forward, directionToPlayer);
-        if (angle > visionAngle / 2) return false;
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position + Vector3.up, directionToPlayer, out hit, distance, obstacleMask)) return false;
-        return true;
+        if (waypoints.Count > 0 && agent.isOnNavMesh) agent.SetDestination(waypoints[currentWaypointIndex].position);
     }
 
-    public void HeardLoudNoise(Vector3 noisePosition)
+    void OnDrawGizmos()
     {
-        if (currentState == State.Patrolling && Vector3.Distance(transform.position, noisePosition) < hearingRange)
+        // Vẽ tia nhìn thời gian thực
+        Gizmos.color = debugRayColor;
+        if (debugRayStart != Vector3.zero)
         {
-            lastHeardPosition = noisePosition;
-            ChangeState(State.Searching);
-        }
-    }
-
-    void OnCollisionEnter(Collision collision)
-    {
-        DoorInteraction door = collision.gameObject.GetComponentInParent<DoorInteraction>();
-        if (door != null) door.OpenDoorForAI();
-    }
-
-    void ChangeState(State newState)
-    {
-        if (currentState == newState) return;
-        currentState = newState;
-        agent.isStopped = false;
-    }
-
-    bool EnsureAgentOnNavMesh()
-    {
-        if (agent.isOnNavMesh) return true;
-
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(transform.position, out hit, 2f, NavMesh.AllAreas))
-        {
-            agent.Warp(hit.position);
-            return true;
+            Gizmos.DrawLine(debugRayStart, debugRayEnd);
+            Gizmos.DrawWireSphere(debugRayEnd, 0.1f);
         }
 
-        Debug.LogError($"{nameof(GhostAI_Hybrid)}: NavMeshAgent is not on a NavMesh. Please bake a NavMesh or move the ghost onto it.");
-        enabled = false;
-        return false;
-    }
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, visionRange);
 
-    bool TrySetDestination(Vector3 targetPosition)
-    {
-        if (agent == null || !agent.isOnNavMesh)
+        if (player != null)
         {
-            Debug.LogWarning($"{nameof(GhostAI_Hybrid)}: Cannot set destination because the agent is not on a NavMesh.");
-            return false;
+            Vector3 targetCenter = player.position + Vector3.up * playerTargetHeight;
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawSphere(targetCenter, 0.05f);
         }
-
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(targetPosition, out hit, 2f, NavMesh.AllAreas))
-        {
-            return agent.SetDestination(hit.position);
-        }
-
-        Debug.LogWarning($"{nameof(GhostAI_Hybrid)}: No NavMesh point found near target position {targetPosition}.");
-        return false;
     }
 }
