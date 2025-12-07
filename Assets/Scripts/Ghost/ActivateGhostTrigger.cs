@@ -2,46 +2,39 @@
 
 public class GhostActivator : MonoBehaviour
 {
-    [Header("Setup")]
-    [Tooltip("Kéo con Ghost vào đây")]
-    public GhostAI_Hybrid ghostScript;
+    [Header("Kéo con Ghost vào đây")]
+    public GhostBoss ghostAI;
 
-    [Tooltip("Nếu tích, Ghost sẽ kích hoạt khi Player chạm vào vùng Trigger")]
-    public bool activateOnTriggerEnter = true;
+    [Header("Cài đặt")]
+    public bool destroyAfterTrigger = true; // Chạm xong có xóa vật này đi không?
 
-    [Tooltip("Chỉ kích hoạt 1 lần duy nhất")]
-    public bool triggerOnce = true;
-
-    private bool hasTriggered = false;
-
-    // Tự động tìm Ghost nếu quên kéo
-    void Start()
+    private void OnTriggerEnter(Collider other)
     {
-        if (ghostScript == null)
+        // Chỉ kích hoạt nếu người chạm là Player
+        if (other.CompareTag("Player"))
         {
-            ghostScript = FindObjectOfType<GhostAI_Hybrid>();
-        }
-    }
+            if (ghostAI != null)
+            {
+                Debug.Log("ZME: Đã chạm vào vật kích hoạt! Gọi Ghost dậy...");
 
-    // Dùng cho Trigger Box (đi qua cửa là ma xuất hiện)
-    void OnTriggerEnter(Collider other)
-    {
-        if (activateOnTriggerEnter && other.CompareTag("Player"))
-        {
-            Activate();
-        }
-    }
+                // Gọi hàm kích hoạt trong script AI
+                ghostAI.ActivateGhost();
+            }
+            else
+            {
+                Debug.LogError("ZME: Bạn quên chưa kéo Ghost vào ô Script rồi!");
+            }
 
-    // Hàm này có thể gọi từ nút bấm hoặc sự kiện nhặt đồ khác
-    public void Activate()
-    {
-        if (triggerOnce && hasTriggered) return;
-
-        if (ghostScript != null)
-        {
-            ghostScript.ActivateGhost();
-            hasTriggered = true;
-            Debug.Log("Activator: Đã gọi Ghost dậy!");
+            // Xử lý vật phẩm sau khi chạm
+            if (destroyAfterTrigger)
+            {
+                gameObject.SetActive(false); // Ẩn đi
+            }
+            else
+            {
+                // Nếu không ẩn thì tắt collider để không kích hoạt lại lần 2
+                GetComponent<Collider>().enabled = false;
+            }
         }
     }
 }
