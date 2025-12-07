@@ -4,15 +4,19 @@
 public class PlayerController : MonoBehaviour
 {
     [Header("Tốc độ")]
-    public float moveSpeed = 5.0f;      // Tốc độ di chuyển
-    public float rotateSpeed = 10.0f;   // Tốc độ xoay (cần nhanh hơn để xoay mượt)
+    public float moveSpeed = 5.0f;
+    // NOTE: rotateSpeed không còn dùng cho xoay thân nữa, Mouse Look sẽ điều khiển.
+
+    [Header("Góc nhìn (FPS)")] // THIẾT LẬP MỚI
+    public float mouseSensitivity = 300f; // Tốc độ xoay chuột
 
     [Header("Tài sản")]
-    public GameObject flashlightObject; // FlashLightReal GameObject
+    public Light flashlight;
 
     private CharacterController controller;
     private Animator animator;
-    private Transform cameraMainTransform; // Biến để lưu trữ camera
+    private Transform cameraMainTransform;
+    private float xRotation = 0f; // Biến để lưu trữ góc xoay dọc của camera
 
     // Vật lý
     private float gravity = -9.81f;
@@ -22,13 +26,12 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
-        cameraMainTransform = Camera.main.transform; // Tự động tìm camera chính
-        
-        // Ẩn flashlight lúc bắt đầu
-        if (flashlightObject != null)
-        {
-            flashlightObject.SetActive(false);
-        }
+
+        // Tìm camera con (Giả sử Main Camera là con trực tiếp của Player)
+        cameraMainTransform = GetComponentInChildren<Camera>().transform;
+
+        // KHÓA CON TRỎ CHUỘT
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
@@ -36,12 +39,17 @@ public class PlayerController : MonoBehaviour
         // --- 1. XỬ LÝ TRỌNG LỰC ---
         HandleGravity();
 
-        // --- 2. XỬ LÝ DI CHUYỂN & XOAY (Đã tối ưu hóa) ---
-        HandleMovementAndRotation();
+        // --- 2. XỬ LÝ DI CHUYỂN ---
+        HandleMovement();
 
-        // --- 3. XỦ LÝ ĐÈN PIN (PHÍM L) ---
+        // --- 3. XỬ LÝ GÓC NHÌN CHUỘT (MỚI) ---
+        HandleMouseLook();
+
+        // --- 4. XỬ LÝ ĐÈN PIN (PHÍM F) ---
         HandleFlashlight();
     }
+
+    // [Các hàm phụ trợ]
 
     void HandleGravity()
     {
@@ -53,51 +61,56 @@ public class PlayerController : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
     }
 
-    void HandleMovementAndRotation()
+    // Đã đổi tên và thay đổi logic di chuyển/xoay
+    void HandleMovement()
     {
         // Lấy input
-        float moveZ_Input = Input.GetAxis("Vertical");   // W/S
-        float moveX_Input = Input.GetAxis("Horizontal"); // A/D
+        float moveZ_Input = Input.GetAxis("Vertical");
+        float moveX_Input = Input.GetAxis("Horizontal");
 
-        // Lấy hướng của camera (và làm phẳng nó, không quan tâm camera nhìn lên hay xuống)
-        Vector3 camForward = cameraMainTransform.forward;
-        Vector3 camRight = cameraMainTransform.right;
-        camForward.y = 0;
-        camRight.y = 0;
-        camForward.Normalize();
-        camRight.Normalize();
+        // Tính toán di chuyển dựa trên hướng của BODY (transform.forward/right)
+        // Body (Player) luôn quay theo chuột, nên đây là hướng di chuyển đúng.
+        Vector3 forwardMovement = transform.forward * moveZ_Input;
+        Vector3 rightMovement = transform.right * moveX_Input;
 
-        // Tính toán hướng di chuyển dựa trên camera
-        Vector3 moveDirection = (camForward * moveZ_Input) + (camRight * moveX_Input);
-        moveDirection.Normalize(); // Chuẩn hóa vector để di chuyển chéo không nhanh hơn
+        // Tổng hợp hướng di chuyển (chuẩn FPS)
+        Vector3 finalMoveDirection = (forwardMovement + rightMovement).normalized;
 
         // Áp dụng di chuyển
-        controller.Move(moveDirection * moveSpeed * Time.deltaTime);
-
-        // --- XỬ LÝ XOAY (Tối ưu hóa) ---
-        if (moveDirection != Vector3.zero) // Chỉ xoay khi có di chuyển
-        {
-            // Tính toán hướng xoay (luôn quay mặt về hướng di chuyển)
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-
-            // Xoay nhân vật một cách "mượt" (Slerp)
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotateSpeed * Time.deltaTime);
-        }
+        controller.Move(finalMoveDirection * moveSpeed * Time.deltaTime);
 
         // --- XỬ LÝ ANIMATION ---
-        // Animator chỉ cần biết TỐC ĐỘ
-        // (vì nhân vật luôn quay mặt về trước, chúng ta không cần "Direction" nữa)
+        // (Sử dụng input gốc để biết người chơi có muốn di chuyển không)
         float speed = new Vector2(moveX_Input, moveZ_Input).magnitude;
         animator.SetFloat("Speed", speed);
     }
 
+    // === HÀM XỬ LÝ GÓC NHÌN MỚI (FPS MOUSE LOOK) ===
+    void HandleMouseLook()
+    {
+        // Nhận input chuột (đã nhân với mouseSensitivity và Time.deltaTime)
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+
+        // 1. Xoay thân nhân vật (trục Y - ngang): Xoay đối tượng Player (Cha)
+        transform.Rotate(Vector3.up * mouseX);
+
+        // 2. Xoay camera (trục X - dọc/pitch): Xoay đối tượng Camera (Con)
+        xRotation -= mouseY; // Trừ vì trục Y chuột ngược với trục X camera
+
+        // Giới hạn góc nhìn lên/xuống (-90 độ là nhìn thẳng lên, 90 độ là nhìn thẳng xuống)
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        // Áp dụng xoay dọc cho camera (chỉ xoay camera, không xoay thân)
+        cameraMainTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+    }
+
+
     void HandleFlashlight()
     {
-        // Chỉ cho phép bật/tắt đèn khi đã nhặt flashlight
-        if (flashlightObject != null && Input.GetKeyDown(KeyCode.L) && GlobalInventory.hasFlashlight)
+        if (flashlight != null && Input.GetKeyDown(KeyCode.F))
         {
-            // Bật/tắt cả GameObject (bao gồm model và ánh sáng)
-            flashlightObject.SetActive(!flashlightObject.activeSelf);
+            flashlight.enabled = !flashlight.enabled;
         }
     }
 }

@@ -16,7 +16,9 @@ public enum ItemType
     Knife,
     BowOfPoison,
     MusicBox,
-    Chains
+    Chains,
+    OfficeKey,
+    MachineRoomCard
 }
 
 public class PickUpItem : MonoBehaviour
@@ -151,6 +153,8 @@ public class PickUpItem : MonoBehaviour
                 return GlobalInventory.hasKey;
             case ItemType.GuardKey:
                 return GlobalInventory.hasGuardKey;
+            case ItemType.OfficeKey:
+                return GlobalInventory.hasOfficeKey;
             case ItemType.VHSTape:
                 return GlobalInventory.hasVHSTape;
             case ItemType.VHSOfficeTape:
@@ -159,6 +163,8 @@ public class PickUpItem : MonoBehaviour
                 return GlobalInventory.hasFlashlight;
             case ItemType.SafeCard:
                 return GlobalInventory.hasSafeCard;
+            case ItemType.MachineRoomCard:
+                return GlobalInventory.hasMachineRoomCard;
             case ItemType.Crowbar:
                 return GlobalInventory.hasCrowbar;
             default:

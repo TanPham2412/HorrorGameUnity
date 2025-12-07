@@ -1,9 +1,13 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Video;
 
 public class ImportantItemsCutscene : MonoBehaviour
 {
+    public static event Action PostCutsceneMonologuesFinished;
+
     [Header("Cutscene Trigger")]
     public int requiredImportantItems = 5;
     public string diaryFlagKey = "DiaryImportantUnlocked";
@@ -21,9 +25,9 @@ public class ImportantItemsCutscene : MonoBehaviour
     public GameObject[] objectsToDisableDuringCutscene;
 
     [Header("Post Cutscene Monologue")]
-    [TextArea(2, 4)] public string postCutsceneMonologue = "Cái gì thế này?! Ánh sáng này... phát ra từ những món đồ kia? Tiếng khóc của con ma... đã tắt rồi. Chúng đang bảo vệ mình sao?";
-    public float postCutsceneMonologueDuration = 5f;
+    public float defaultPostCutsceneMonologueDuration = 5f;
     public bool postMonologueAddsToLog = true;
+    public List<PostCutsceneMonologueLine> postCutsceneMonologueLines = new();
 
     private bool cutscenePlayed;
 
@@ -88,12 +92,29 @@ public class ImportantItemsCutscene : MonoBehaviour
             if (obj != null) obj.SetActive(true);
         }
 
-        if (!string.IsNullOrWhiteSpace(postCutsceneMonologue))
+        if (postCutsceneMonologueLines != null && postCutsceneMonologueLines.Count > 0)
         {
-            float duration = postCutsceneMonologueDuration > 0f ? postCutsceneMonologueDuration : 5f;
-            MonologueManager.PlayMonologue(postCutsceneMonologue, duration, postMonologueAddsToLog, true);
+            foreach (var line in postCutsceneMonologueLines)
+            {
+                if (line == null || string.IsNullOrWhiteSpace(line.text)) continue;
+                float duration = line.duration > 0f ? line.duration : defaultPostCutsceneMonologueDuration;
+                duration = duration > 0f ? duration : 5f;
+                MonologueManager.PlayMonologue(line.text, duration, postMonologueAddsToLog, true);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("ImportantItemsCutscene: No post cutscene monologue lines configured.");
         }
 
+        PostCutsceneMonologuesFinished?.Invoke();
         StoryFlagManager.SetFlag("ImportantItemsCutscenePlayed");
+    }
+
+    [System.Serializable]
+    public class PostCutsceneMonologueLine
+    {
+        [TextArea(2, 4)] public string text;
+        public float duration = 5f;
     }
 }

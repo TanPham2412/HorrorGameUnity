@@ -5,7 +5,8 @@ using UnityEngine;
 public enum DoorType
 {
     GenericDoor,
-    GuardRoom
+    GuardRoom,
+    OfficeDoor
 }
 
 public class DoorKey : MonoBehaviour
@@ -20,12 +21,17 @@ public class DoorKey : MonoBehaviour
     public GameObject ActionText;
     public GameObject ActionText2;
     public GameObject LockedText;
+    [TextArea(2,4)] public string lockedMonologue = "Cánh cửa đã bị khóa rồi, mình phải đi tìm chìa khóa, có lẽ nó ở trong phòng bảo vệ.";
+    public float lockedMonologueDuration = 4f;
+    public bool lockedMonologueAddsToLog = false;
     public GameObject Door;
     public GameObject NameObject;
     public AudioSource DoorCreakSound;
     private bool doorIsOpen = false;
     private bool isUnlocked = false;
     public GameObject ExtraCross;
+
+    public bool IsUnlocked => isUnlocked;
     void Update()
     {
         TheDistance = PlayerCasting.DistanceFromTarget;
@@ -39,6 +45,10 @@ public class DoorKey : MonoBehaviour
             if (isUnlocked == false && !HasRequiredKey())
             {
                 LockedText.SetActive(true);
+                if (doorType == DoorType.OfficeDoor)
+                {
+                    MaybePlayLockedMonologue();
+                }
             }
             else
             {
@@ -119,8 +129,32 @@ public class DoorKey : MonoBehaviour
                 return GlobalInventory.hasKey;
             case DoorType.GuardRoom:
                 return GlobalInventory.hasGuardKey;
+            case DoorType.OfficeDoor:
+                return GlobalInventory.hasOfficeKey || GlobalInventory.hasGuardKey;
             default:
                 return false;
         }
+    }
+
+    public void UnlockDoorExternally(bool openImmediately = false)
+    {
+        if (isUnlocked && !openImmediately)
+        {
+            return;
+        }
+
+        isUnlocked = true;
+        if (LockedText != null) LockedText.SetActive(false);
+
+        if (openImmediately && !doorIsOpen)
+        {
+            StartCoroutine(OpenTheDoor());
+        }
+    }
+
+    private void MaybePlayLockedMonologue()
+    {
+        if (string.IsNullOrWhiteSpace(lockedMonologue)) return;
+        MonologueManager.PlayMonologue(lockedMonologue, lockedMonologueDuration > 0 ? lockedMonologueDuration : 4f, lockedMonologueAddsToLog, true);
     }
 }

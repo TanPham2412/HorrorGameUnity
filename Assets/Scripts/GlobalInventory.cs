@@ -6,10 +6,12 @@ public class GlobalInventory : MonoBehaviour
     // Legacy individual item flags (kept for compatibility)
     public static bool hasKey = false;
     public static bool hasGuardKey = false;
+    public static bool hasOfficeKey = false;
     public static bool hasVHSTape = false;
     public static bool hasVHSOfficeTape = false;
     public static bool hasFlashlight = false;
     public static bool hasSafeCard = false;
+    public static bool hasMachineRoomCard = false;
     public static bool hasCrowbar = false;
 
     private static readonly HashSet<ItemType> importantItemsOwned = new();
@@ -147,9 +149,11 @@ public class GlobalInventory : MonoBehaviour
     {
         hasKey = false;
         hasGuardKey = false;
+        hasOfficeKey = false;
         hasVHSTape = false;
         hasVHSOfficeTape = false;
         hasSafeCard = false;
+        hasMachineRoomCard = false;
         hasCrowbar = false;
     }
 
@@ -163,6 +167,9 @@ public class GlobalInventory : MonoBehaviour
             case ItemType.GuardKey:
                 hasGuardKey = value;
                 break;
+            case ItemType.OfficeKey:
+                hasOfficeKey = value;
+                break;
             case ItemType.VHSTape:
                 hasVHSTape = value;
                 break;
@@ -174,6 +181,9 @@ public class GlobalInventory : MonoBehaviour
                 break;
             case ItemType.SafeCard:
                 hasSafeCard = value;
+                break;
+            case ItemType.MachineRoomCard:
+                hasMachineRoomCard = value;
                 break;
             case ItemType.Crowbar:
                 hasCrowbar = value;
