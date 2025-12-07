@@ -31,12 +31,18 @@ public class PauseManager : MonoBehaviour
         {
             pausePanel.SetActive(true);
             Time.timeScale = 0f;
+
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
         else
         {
             CloseSavePanel();
             pausePanel.SetActive(false);
             Time.timeScale = 1f;
+
+            Cursor.lockState = CursorLockMode.Locked; 
+            Cursor.visible = false;
         }
     }
 
@@ -69,6 +75,7 @@ public class PauseManager : MonoBehaviour
     public void OnExitToMenuButton()
     {
         Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None; 
         SceneManager.LoadSceneAsync("MainMenu_Scene");
     }
 }

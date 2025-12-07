@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 
 public class DoorInteraction : MonoBehaviour
@@ -23,8 +24,13 @@ public class DoorInteraction : MonoBehaviour
         // (Xoay 90 độ quanh trục Y so với vị trí đóng)
         openRotation = closedRotation * Quaternion.Euler(0, openAngle, 0);
     }
-
-    // Hàm public này sẽ được Player gọi
+    public void OpenDoorForAI()
+    {
+        if (isOpen == false) // Chỉ mở nếu cửa đang đóng
+        {
+            ToggleDoor(); // Gọi hàm mở/đóng
+        }
+    }
     public void ToggleDoor()
     {
         // Nếu đang có coroutine (cửa đang chạy), dừng nó lại

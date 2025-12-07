@@ -44,6 +44,8 @@ public class ReadNotebook : MonoBehaviour
     public MonoBehaviour playerMovementScript; // script điều khiển nhân vật
     public GameObject crosshair;              // crosshair chính
 
+    public static event System.Action<string> OnNoteOpened;
+
     private bool isOpen = false;
     private bool hasRegisteredClue = false;
     private bool hasRegisteredMonologue = false;
@@ -134,6 +136,8 @@ public class ReadNotebook : MonoBehaviour
         if (notePanel != null) notePanel.SetActive(true);
         if (noteImage != null && noteSprite != null) noteImage.sprite = noteSprite;
         if (noteText != null) noteText.text = noteContent;
+
+        OnNoteOpened?.Invoke(gameObject.name);
 
         // Đăng ký vào nhật ký manh mối/độc thoại (chỉ 1 lần)
         string clueText = string.IsNullOrWhiteSpace(clueLogEntry) ? noteContent : clueLogEntry;

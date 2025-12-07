@@ -8,9 +8,17 @@ public enum ItemType
     Key,
     GuardKey,
     VHSTape,
+    VHSOfficeTape,
     Flashlight,
     SafeCard,
-    Crowbar
+    Crowbar,
+    RabbitDoll,
+    Knife,
+    BowOfPoison,
+    MusicBox,
+    Chains,
+    OfficeKey,
+    MachineRoomCard
 }
 
 public class PickUpItem : MonoBehaviour
@@ -56,10 +64,34 @@ public class PickUpItem : MonoBehaviour
     public float blackoutDuration = 2f;
     public float ghostVisibleDuration = 1f;
     public float secondBlackoutDuration = 0.5f;
+
+    [Header("Pickup Monologue")]
+    public bool playPickupMonologue = false;
+    [TextArea(2, 4)] public string pickupMonologueLine;
+    public float pickupMonologueDuration = 4f;
+    public bool pickupLineAddsToLog = true;
+
+    [Header("Important Item Settings")]
+    public bool isImportantItem = false;
+    [Tooltip("If true, capture the current RealItem local transform on Awake to reapply when equipping.")]
+    public bool autoCaptureImportantHandOffsets = true;
+    public Vector3 importantItemHandLocalPosition = Vector3.zero;
+    public Vector3 importantItemHandLocalEuler = Vector3.zero;
+    public Vector3 importantItemHandLocalScale = Vector3.one;
     
     private float actualDistanceToPlayer;
     private static bool crowbarMonologuePlayed = false;
     private bool specialEffectTriggered = false;
+    private bool pickupMonologuePlayed = false;
+    
+    private void Awake()
+    {
+        if (GlobalInventory.IsImportantItemType(itemType))
+        {
+            isImportantItem = true;
+        }
+
+    }
     
     void Update()
     {
@@ -72,7 +104,7 @@ public class PickUpItem : MonoBehaviour
         }
 
         // Check for drop input based on item type (KHÔNG cho phép vứt flashlight)
-        if (Input.GetKeyDown(KeyCode.Q) && GlobalInventory.HasSpecificItem(itemType) && itemType != ItemType.Flashlight)
+        if (Input.GetKeyDown(KeyCode.Q) && !isImportantItem && GlobalInventory.HasSpecificItem(itemType) && itemType != ItemType.Flashlight)
         {
             DropItem();
         }
@@ -121,12 +153,18 @@ public class PickUpItem : MonoBehaviour
                 return GlobalInventory.hasKey;
             case ItemType.GuardKey:
                 return GlobalInventory.hasGuardKey;
+            case ItemType.OfficeKey:
+                return GlobalInventory.hasOfficeKey;
             case ItemType.VHSTape:
                 return GlobalInventory.hasVHSTape;
+            case ItemType.VHSOfficeTape:
+                return GlobalInventory.hasVHSOfficeTape;
             case ItemType.Flashlight:
                 return GlobalInventory.hasFlashlight;
             case ItemType.SafeCard:
                 return GlobalInventory.hasSafeCard;
+            case ItemType.MachineRoomCard:
+                return GlobalInventory.hasMachineRoomCard;
             case ItemType.Crowbar:
                 return GlobalInventory.hasCrowbar;
             default:
@@ -150,6 +188,12 @@ public class PickUpItem : MonoBehaviour
     
     private void PickUpItemAction()
     {
+        if (isImportantItem)
+        {
+            HandleImportantItemPickup();
+            return;
+        }
+
         // Handle two-slot inventory system
         if (itemType == ItemType.Flashlight)
         {
@@ -157,10 +201,15 @@ public class PickUpItem : MonoBehaviour
         }
         else
         {
-            // For regular items (Key, GuardKey, VHSTape), check if regular slot is occupied
+            // Cất món quan trọng đang cầm đi trước khi chuyển sang món thường
+            if (ImportantItemManager.Instance != null)
+            {
+                ImportantItemManager.Instance.HideCurrentImportantItem();
+            }
+
+            // For regular items, drop the item currently held (if any)
             if (GlobalInventory.HasRegularItem())
             {
-                // Drop the currently held regular item before picking up the new one
                 DropCurrentlyHeldRegularItem();
             }
         }
@@ -193,9 +242,55 @@ public class PickUpItem : MonoBehaviour
             specialEffectTriggered = true;
             StartCoroutine(HandlePickupEffects());
         }
+
+        if (playPickupMonologue && !pickupMonologuePlayed && !string.IsNullOrWhiteSpace(pickupMonologueLine))
+        {
+            MonologueManager.PlayMonologue(pickupMonologueLine, pickupMonologueDuration, pickupLineAddsToLog, true);
+            pickupMonologuePlayed = true;
+        }
         
         // Debug log
         Debug.Log("Picked up: " + itemType + ", Regular item: " + GlobalInventory.currentRegularItem + ", Has flashlight: " + GlobalInventory.hasFlashlight);
+    }
+
+    private void HandleImportantItemPickup()
+    {
+        if (ImportantItemManager.Instance == null)
+        {
+            Debug.LogWarning("No ImportantItemManager present in scene. Cannot pick up important item.");
+            return;
+        }
+
+        transform.SetParent(null);
+
+        var collider = GetComponent<Collider>();
+        if (collider != null) collider.enabled = false;
+        ExtraCross.SetActive(false);
+        ActionDisplay.SetActive(false);
+        ActionText.SetActive(false);
+        NameObject.SetActive(false);
+        FakeItem.SetActive(false);
+        if (RealItem != null)
+        {
+            RealItem.SetActive(false);
+        }
+
+        GlobalInventory.SetImportantItemOwned(itemType, true);
+        ImportantItemManager.Instance.TryAddImportantItem(this);
+
+        if (triggerSpecialEffects && !specialEffectTriggered)
+        {
+            specialEffectTriggered = true;
+            StartCoroutine(HandlePickupEffects());
+        }
+
+        if (playPickupMonologue && !pickupMonologuePlayed && !string.IsNullOrWhiteSpace(pickupMonologueLine))
+        {
+            MonologueManager.PlayMonologue(pickupMonologueLine, pickupMonologueDuration, pickupLineAddsToLog, true);
+            pickupMonologuePlayed = true;
+        }
+
+        Debug.Log("Picked up important item: " + itemType);
     }
 
     private IEnumerator HandlePickupEffects()
@@ -221,15 +316,7 @@ public class PickUpItem : MonoBehaviour
             light.enabled = false;
         }
 
-        if (playerFlashlightLight != null)
-        {
-            playerFlashlightLight.enabled = false;
-        }
-
-        if (playerFlashlightObject != null)
-        {
-            playerFlashlightObject.SetActive(false);
-        }
+        SetPlayerFlashlightState(false);
 
         yield return new WaitForSeconds(blackoutDuration);
 
@@ -240,6 +327,8 @@ public class PickUpItem : MonoBehaviour
             bool wasEnabled = i < previousStates.Count ? previousStates[i] : true;
             light.enabled = wasEnabled;
         }
+
+        SetPlayerFlashlightState(true);
 
 
         if (ghostJumpScare != null)
@@ -265,15 +354,7 @@ public class PickUpItem : MonoBehaviour
             light.enabled = false;
         }
 
-        if (playerFlashlightLight != null)
-        {
-            playerFlashlightLight.enabled = false;
-        }
-
-        if (playerFlashlightObject != null)
-        {
-            playerFlashlightObject.SetActive(false);
-        }
+        SetPlayerFlashlightState(false);
 
         yield return new WaitForSeconds(secondBlackoutDuration);
 
@@ -315,6 +396,89 @@ public class PickUpItem : MonoBehaviour
         if (flashlightToggleScript != null)
         {
             flashlightToggleScript.enabled = true;
+        }
+
+        StoryFlagManager.SetFlag("SafeCardSequenceCompleted");
+        AmbientMusicManager.Instance?.DisableRestroomMusic();
+    }
+
+    public void ForceDropFromInventory(bool playSound = false)
+    {
+        if (isImportantItem)
+        {
+            return;
+        }
+        DropItem(playSound);
+    }
+
+    public void SetHandItemActive(bool state)
+    {
+        if (RealItem != null)
+        {
+            RealItem.SetActive(state);
+        }
+    }
+
+    public void AttachImportantItemToHand(Transform handSlot)
+    {
+        if (RealItem == null) return;
+
+        Transform targetParent = handSlot != null ? handSlot : RealItem.transform.parent;
+
+        if (targetParent != null)
+        {
+            if (autoCaptureImportantHandOffsets)
+            {
+                CaptureImportantItemOffsets(targetParent);
+                autoCaptureImportantHandOffsets = false;
+            }
+
+            if (handSlot != null)
+            {
+                RealItem.transform.SetParent(handSlot, false);
+            }
+
+            RealItem.transform.localPosition = importantItemHandLocalPosition;
+            RealItem.transform.localRotation = Quaternion.Euler(importantItemHandLocalEuler);
+            RealItem.transform.localScale = importantItemHandLocalScale;
+        }
+    }
+
+    private void CaptureImportantItemOffsets(Transform referenceParent)
+    {
+        if (RealItem == null || referenceParent == null) return;
+
+        Transform realTransform = RealItem.transform;
+        importantItemHandLocalPosition = referenceParent.InverseTransformPoint(realTransform.position);
+        Quaternion relativeRotation = Quaternion.Inverse(referenceParent.rotation) * realTransform.rotation;
+        importantItemHandLocalEuler = relativeRotation.eulerAngles;
+        importantItemHandLocalScale = DivideVector(realTransform.lossyScale, referenceParent.lossyScale);
+    }
+
+    private static Vector3 DivideVector(Vector3 numerator, Vector3 denominator)
+    {
+        float SafeDiv(float a, float b)
+        {
+            return Mathf.Approximately(b, 0f) ? a : a / b;
+        }
+
+        return new Vector3(
+            SafeDiv(numerator.x, denominator.x),
+            SafeDiv(numerator.y, denominator.y),
+            SafeDiv(numerator.z, denominator.z)
+        );
+    }
+
+    private void SetPlayerFlashlightState(bool state)
+    {
+        if (playerFlashlightObject != null)
+        {
+            playerFlashlightObject.SetActive(state);
+        }
+
+        if (playerFlashlightLight != null)
+        {
+            playerFlashlightLight.enabled = state;
         }
     }
     
