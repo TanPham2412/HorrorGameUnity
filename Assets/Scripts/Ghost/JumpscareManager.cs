@@ -23,7 +23,7 @@ public class JumpscareManager : MonoBehaviour
         jumpscareScreen.SetActive(true);
 
         // 2. Phát video
-        videoPlayer.Play();
+        videoPlayer.Play(); 
 
         // 3. Bắt đầu đếm ngược để reset game
         // (Lấy độ dài của video để chờ)
