@@ -1,10 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Video;
-using UnityEngine.InputSystem;
-using TMPro; 
+using TMPro;
 
 public class PlayCassette : MonoBehaviour
 {
@@ -12,28 +10,22 @@ public class PlayCassette : MonoBehaviour
     public GameObject ActionDisplay;
     public GameObject ActionText;
     public GameObject NameObject;
-    public GameObject NoCassetteText; // Text hiển thị khi không có cassette
+    public GameObject NoCassetteText;
     public GameObject ExtraCross;
     public VideoPlayer videoPlayer;
-    public GameObject fullScreenVideoUI; // Kéo FullScreenVideo (Raw Image) vào đây
-    public MonoBehaviour playerMovementScript; // Kéo SCRIPT điều khiển nhân vật vào đây
-    public GameObject crosshair; // Kéo crosshair UI vào đây (nếu có)
-    public PickUpItem flashlightPickUp; // Kéo FlashLightTrigger (PickUpItem) vào đây
+    public GameObject fullScreenVideoUI;
+    public MonoBehaviour playerMovementScript;
+    public GameObject crosshair;
+    public PickUpItem flashlightPickUp;
 
     [Header("Tape Configurations")]
     public List<TapeConfiguration> tapeConfigs = new();
 
-    [Header("Audio Settings")]
-    public AudioSource breathingAudioSource; // AudioSource dùng chung, clip & volume nằm ở từng tape
-
-    private bool isPlaying = false; // Đang phát video
+    private bool isPlaying = false;
     private readonly HashSet<ItemType> monologuesQueuedForTapes = new();
-    private readonly HashSet<ItemType> audioPlayedForTapes = new();
-    private readonly HashSet<ItemType> postSequenceTriggeredTapes = new();
 
     void Start()
     {
-        // Nếu có băng yêu cầu xem trước khi nhặt đèn pin thì khóa nhặt
         if (flashlightPickUp != null && AnyTapeLocksFlashlight())
         {
             LockFlashlightPickup();
@@ -52,7 +44,6 @@ public class PlayCassette : MonoBehaviour
     {
         if (TheDistance <= 3 && !isPlaying)
         {
-
             TapeConfiguration activeTape;
             bool hasTape = TryGetActiveTape(out activeTape);
 
@@ -77,7 +68,6 @@ public class PlayCassette : MonoBehaviour
             NoCassetteText.SetActive(false);
         }
 
-        // Cho phép xem lại nhiều lần nếu vẫn còn băng
         if (Input.GetKeyDown(KeyCode.E) && TheDistance <= 3 && !isPlaying)
         {
             TapeConfiguration activeTape;
@@ -102,15 +92,9 @@ public class PlayCassette : MonoBehaviour
 
     IEnumerator PlayCutscene(TapeConfiguration config)
     {
-        if (config == null)
+        if (config == null || config.videoClip == null)
         {
-            Debug.LogWarning("PlayCassette: Tape configuration is missing.");
-            yield break;
-        }
-
-        if (config.videoClip == null)
-        {
-            Debug.LogWarning($"PlayCassette: Tape {config.tapeItem} is missing a VideoClip.");
+            Debug.LogWarning("PlayCassette: Missing Tape Config or VideoClip.");
             yield break;
         }
 
@@ -137,16 +121,23 @@ public class PlayCassette : MonoBehaviour
         if (crosshair != null) crosshair.SetActive(true);
         isPlaying = false;
 
-        TryPlayTapeAudio(config);
-
-        // Sau khi xem xong video lần đầu: cho phép nhặt flashlight nếu cấu hình yêu cầu
+        // 1. Mở khóa đèn pin (nếu có)
         if (config.unlockFlashlightAfterPlayback)
         {
             UnlockFlashlightPickup();
         }
 
+        // 2. Chạy Độc thoại (Monologue)
         QueueCassetteMonologues(config);
-        StartCoroutine(HandlePostSequence(config));
+
+        // 3. Tắt các vật thể cần tắt (Objects To Deactivate) - Đã thêm lại ở đây
+        if (config.objectsToDeactivate != null)
+        {
+            foreach (var go in config.objectsToDeactivate)
+            {
+                if (go != null) go.SetActive(false);
+            }
+        }
     }
 
     [System.Serializable]
@@ -159,105 +150,14 @@ public class PlayCassette : MonoBehaviour
     private void QueueCassetteMonologues(TapeConfiguration config)
     {
         if (config == null || config.monologueLines == null || config.monologueLines.Count == 0) return;
-
         if (!monologuesQueuedForTapes.Add(config.tapeItem)) return;
-
-        float totalDuration = 0f;
 
         foreach (var line in config.monologueLines)
         {
             if (line == null || string.IsNullOrWhiteSpace(line.text)) continue;
             float duration = line.duration > 0f ? line.duration : 4f;
-            totalDuration += duration;
             MonologueManager.PlayMonologue(line.text, duration, config.logMonologuesToLog, config.preventDuplicate);
         }
-
-        if (config.lockPlayerDuringMonologues && totalDuration > 0f)
-        {
-            StartCoroutine(LockPlayerForDuration(totalDuration));
-        }
-    }
-
-    private IEnumerator LockPlayerForDuration(float duration)
-    {
-        if (playerMovementScript == null) yield break;
-
-        playerMovementScript.enabled = false;
-        if (crosshair != null) crosshair.SetActive(false);
-
-        yield return new WaitForSeconds(duration);
-
-        playerMovementScript.enabled = true;
-        if (crosshair != null) crosshair.SetActive(true);
-    }
-
-    private void TryPlayTapeAudio(TapeConfiguration config)
-    {
-        if (config == null || !config.playAudioAfterViewing) return;
-        if (breathingAudioSource == null || config.audioClip == null) return;
-        if (!audioPlayedForTapes.Add(config.tapeItem)) return;
-
-        breathingAudioSource.PlayOneShot(config.audioClip, config.audioVolume);
-    }
-
-    private IEnumerator HandlePostSequence(TapeConfiguration config)
-    {
-        if (config == null || !config.triggerPostSequence) yield break;
-        if (!postSequenceTriggeredTapes.Add(config.tapeItem)) yield break;
-
-        float waitTime = Mathf.Max(0f, GetTotalMonologueDuration(config) + config.postSequenceDelay);
-        if (waitTime > 0f)
-        {
-            yield return new WaitForSeconds(waitTime);
-        }
-
-        if (config.postSequenceAudioClip != null && breathingAudioSource != null)
-        {
-            breathingAudioSource.PlayOneShot(config.postSequenceAudioClip, config.postSequenceAudioVolume);
-        }
-
-        if (!string.IsNullOrWhiteSpace(config.postSequenceMonologueText))
-        {
-            MonologueManager.PlayMonologue(
-                config.postSequenceMonologueText,
-                config.postSequenceMonologueDuration,
-                config.postSequenceLogToLog,
-                config.postSequencePreventDuplicate);
-        }
-
-        if (config.objectsToActivate != null)
-        {
-            foreach (var go in config.objectsToActivate)
-            {
-                if (go != null) go.SetActive(true);
-            }
-        }
-
-        if (config.objectsToDeactivate != null)
-        {
-            foreach (var go in config.objectsToDeactivate)
-            {
-                if (go != null) go.SetActive(false);
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(config.postSequenceFlagKey))
-        {
-            StoryFlagManager.SetFlag(config.postSequenceFlagKey);
-        }
-    }
-
-    private float GetTotalMonologueDuration(TapeConfiguration config)
-    {
-        if (config == null || config.monologueLines == null) return 0f;
-        float total = 0f;
-        foreach (var line in config.monologueLines)
-        {
-            if (line == null) continue;
-            total += Mathf.Max(0f, line.duration);
-        }
-
-        return total;
     }
 
     private bool TryGetActiveTape(out TapeConfiguration config)
@@ -275,7 +175,6 @@ public class PlayCassette : MonoBehaviour
                 return true;
             }
         }
-
         return false;
     }
 
@@ -283,19 +182,14 @@ public class PlayCassette : MonoBehaviour
     {
         foreach (var tape in tapeConfigs)
         {
-            if (tape != null && tape.disableFlashlightUntilViewed)
-            {
-                return true;
-            }
+            if (tape != null && tape.disableFlashlightUntilViewed) return true;
         }
-
         return false;
     }
 
     private void LockFlashlightPickup()
     {
         if (flashlightPickUp == null) return;
-
         GlobalInventory.canPickupFlashlight = false;
         flashlightPickUp.enabled = false;
         Collider col = flashlightPickUp.GetComponent<Collider>();
@@ -305,7 +199,6 @@ public class PlayCassette : MonoBehaviour
     private void UnlockFlashlightPickup()
     {
         if (flashlightPickUp == null) return;
-
         GlobalInventory.canPickupFlashlight = true;
         flashlightPickUp.enabled = true;
         Collider col = flashlightPickUp.GetComponent<Collider>();
@@ -323,23 +216,8 @@ public class PlayCassette : MonoBehaviour
         public List<MonologueLine> monologueLines = new();
         public bool logMonologuesToLog = true;
         public bool preventDuplicate = true;
-        [Header("Audio")]
-        public bool playAudioAfterViewing = true;
-        public AudioClip audioClip;
-        [Range(0f, 1f)] public float audioVolume = 1f;
-        public bool lockPlayerDuringMonologues = false;
 
-        [Header("Post Sequence (after monologues)")]
-        public bool triggerPostSequence = false;
-        public float postSequenceDelay = 0f;
-        public AudioClip postSequenceAudioClip;
-        [Range(0f, 1f)] public float postSequenceAudioVolume = 1f;
-        [TextArea(2, 5)] public string postSequenceMonologueText;
-        public float postSequenceMonologueDuration = 4f;
-        public bool postSequenceLogToLog = true;
-        public bool postSequencePreventDuplicate = true;
-        public GameObject[] objectsToActivate;
+        [Header("Extras")]
         public GameObject[] objectsToDeactivate;
-        public string postSequenceFlagKey;
     }
 }
