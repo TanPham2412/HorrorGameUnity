@@ -4066,6 +4066,8 @@ MonoBehaviour:
   settingsPanel: {fileID: 1219481442}
   loadGamePanel: {fileID: 1650291843}
   sceneToLoad: SampleScene
+  mainMixer: {fileID: 0}
+  volumeSlider: {fileID: 0}
 --- !u!4 &1549522542
 Transform:
   m_ObjectHideFlags: 0
@@ -5186,6 +5188,6 @@ SceneRoots:
   - {fileID: 1456506365}
   - {fileID: 491815727}
   - {fileID: 508890251}
-  - {fileID: 1083277276}
   - {fileID: 1549522542}
+  - {fileID: 1083277276}
   - {fileID: 1328932064832765764}
