@@ -47079,7 +47079,7 @@ CharacterController:
   m_Height: 1.9999999
   m_Radius: 0.50000006
   m_SlopeLimit: 45
-  m_StepOffset: 0.3
+  m_StepOffset: 0.15
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
@@ -47753,16 +47753,16 @@ MonoBehaviour:
   FallTimeout: 0.15
   Grounded: 1
   GroundedOffset: -0.14
-  GroundedRadius: 0.5
+  GroundedRadius: 1
   GroundLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1
   GroundedAngleThreshold: 65
   CinemachineCameraTarget: {fileID: 5225141656319491934}
   TopClamp: 90
   BottomClamp: -90
-  FlashlightObject: {fileID: 0}
-  flashlightKey: 102
+  FlashlightObject: {fileID: 3219748737505784870}
+  flashlightKey: 108
 --- !u!114 &2204106111995098610
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50525,7 +50525,7 @@ Transform:
   m_GameObject: {fileID: 5225141656319491934}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.6559998, z: 0}
+  m_LocalPosition: {x: -0.02, y: 0.981, z: 0.32}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -50724,7 +50724,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8506792289612793885}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -51005,7 +51005,7 @@ Transform:
   m_GameObject: {fileID: 4857892681841752103}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.045, y: -0.18, z: 0.681}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -51096,7 +51096,7 @@ VideoPlayer:
   m_AspectRatio: 2
   m_DataSource: 0
   m_TimeUpdateMode: 2
-  m_PlaybackSpeed: 1
+  m_PlaybackSpeed: 0.65
   m_AudioOutputMode: 2
   m_TargetAudioSources:
   - {fileID: 0}
