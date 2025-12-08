@@ -29,6 +29,7 @@ public class DoorKey : MonoBehaviour
     public AudioSource DoorCreakSound;
     private bool doorIsOpen = false;
     private bool isUnlocked = false;
+    private bool interactionDisabled;
     public GameObject ExtraCross;
 
     public bool IsUnlocked => isUnlocked;
@@ -39,6 +40,12 @@ public class DoorKey : MonoBehaviour
 
     void OnMouseOver()
     {
+        if (interactionDisabled)
+        {
+            HideAllDoorUI();
+            return;
+        }
+
         if (TheDistance <= 3)
         {
             NameObject.SetActive(true);
@@ -68,7 +75,7 @@ public class DoorKey : MonoBehaviour
         {
             HideAllDoorUI();
         }
-        if (Input.GetButtonDown("Action"))
+        if (Input.GetButtonDown("Action") && !interactionDisabled)
         {
             if (TheDistance <= 3 && (HasRequiredKey() || isUnlocked == true))
             {
@@ -150,6 +157,8 @@ public class DoorKey : MonoBehaviour
 
     private IEnumerator ForceCloseAndDisableRoutine()
     {
+        interactionDisabled = true;
+
         if (doorIsOpen)
         {
             yield return StartCoroutine(CloseTheDoor());
@@ -157,6 +166,11 @@ public class DoorKey : MonoBehaviour
 
         HideAllDoorUI();
         enabled = false;
+        var collider = GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.enabled = false;
+        }
     }
 
     private void MaybePlayLockedMonologue()

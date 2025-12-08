@@ -9,14 +9,21 @@ public class MusicTrigger : MonoBehaviour
 
     [Header("Music Settings")]
     [SerializeField] private AudioSource machineRoomMusicSource;
+    [SerializeField] private float musicDelaySeconds = 3f;
     [SerializeField] private bool loopUntilSuccessVideo = true;
 
     [Header("Door Handling")]
     [SerializeField] private DoorKey doorToClose;
+    [SerializeField] private float doorCloseDelaySeconds = 2f;
+    [SerializeField] private float doorKnockDelaySeconds = 5f;
+    [SerializeField] private AudioSource doorKnockAudioSource;
 
     private Collider triggerCollider;
     private bool hasTriggered;
     private static readonly System.Collections.Generic.HashSet<AudioSource> ActiveSources = new();
+    private Coroutine pendingPlayRoutine;
+    private Coroutine doorCloseRoutine;
+    private Coroutine doorKnockRoutine;
 
     private void Reset()
     {
@@ -53,13 +60,24 @@ public class MusicTrigger : MonoBehaviour
 
         hasTriggered = true;
 
-        PlayMachineRoomMusic();
-        CloseAndDisableDoor();
+        pendingPlayRoutine = StartCoroutine(PlayMachineRoomMusicAfterDelay());
+        doorCloseRoutine = StartCoroutine(CloseDoorAfterDelay());
 
         if (disableColliderAfterTrigger && triggerCollider != null)
         {
             triggerCollider.enabled = false;
         }
+    }
+
+    private System.Collections.IEnumerator PlayMachineRoomMusicAfterDelay()
+    {
+        if (musicDelaySeconds > 0f)
+        {
+            yield return new WaitForSeconds(musicDelaySeconds);
+        }
+
+        PlayMachineRoomMusic();
+        pendingPlayRoutine = null;
     }
 
     private void PlayMachineRoomMusic()
@@ -74,6 +92,33 @@ public class MusicTrigger : MonoBehaviour
         ActiveSources.Add(machineRoomMusicSource);
     }
 
+    private System.Collections.IEnumerator CloseDoorAfterDelay()
+    {
+        if (doorCloseDelaySeconds > 0f)
+        {
+            yield return new WaitForSeconds(doorCloseDelaySeconds);
+        }
+
+        CloseAndDisableDoor();
+        doorCloseRoutine = null;
+
+        if (doorKnockAudioSource != null)
+        {
+            doorKnockRoutine = StartCoroutine(PlayDoorKnockAfterDelay());
+        }
+    }
+
+    private System.Collections.IEnumerator PlayDoorKnockAfterDelay()
+    {
+        if (doorKnockDelaySeconds > 0f)
+        {
+            yield return new WaitForSeconds(doorKnockDelaySeconds);
+        }
+
+        PlayDoorKnockAudio();
+        doorKnockRoutine = null;
+    }
+
     private void CloseAndDisableDoor()
     {
         if (doorToClose == null)
@@ -84,9 +129,54 @@ public class MusicTrigger : MonoBehaviour
         doorToClose.ForceCloseAndDisableInteraction();
     }
 
+    private void PlayDoorKnockAudio()
+    {
+        if (doorKnockAudioSource == null)
+        {
+            return;
+        }
+
+        doorKnockAudioSource.Stop();
+        doorKnockAudioSource.Play();
+    }
+
     private void HandleSuccessVideoStarted()
     {
+        if (pendingPlayRoutine != null)
+        {
+            StopCoroutine(pendingPlayRoutine);
+            pendingPlayRoutine = null;
+        }
+        if (doorCloseRoutine != null)
+        {
+            StopCoroutine(doorCloseRoutine);
+            doorCloseRoutine = null;
+        }
+        if (doorKnockRoutine != null)
+        {
+            StopCoroutine(doorKnockRoutine);
+            doorKnockRoutine = null;
+        }
         StopAudio(machineRoomMusicSource);
+    }
+
+    private void OnDestroy()
+    {
+        if (pendingPlayRoutine != null)
+        {
+            StopCoroutine(pendingPlayRoutine);
+            pendingPlayRoutine = null;
+        }
+        if (doorCloseRoutine != null)
+        {
+            StopCoroutine(doorCloseRoutine);
+            doorCloseRoutine = null;
+        }
+        if (doorKnockRoutine != null)
+        {
+            StopCoroutine(doorKnockRoutine);
+            doorKnockRoutine = null;
+        }
     }
 
     private static void StopAudio(AudioSource source)

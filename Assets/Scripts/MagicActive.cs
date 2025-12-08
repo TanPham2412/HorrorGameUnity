@@ -34,6 +34,11 @@ public class MagicActive : MonoBehaviour
     [SerializeField] private VideoPlaybackConfig failureVideoConfig;
     [SerializeField] private EndCreditConfig failureCredits;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource activationAudioSource;
+    [SerializeField] private AudioSource successAudioSource;
+    [SerializeField] private AudioSource failureAudioSource;
+
     private Collider triggerCollider;
     private bool triggerReady;
     private bool isSequenceRunning;
@@ -145,6 +150,7 @@ public class MagicActive : MonoBehaviour
 
         if (Input.GetButtonDown("Action"))
         {
+            PlayAudio(activationAudioSource);
             StartCoroutine(HandleActivationSequence());
         }
     }
@@ -169,6 +175,7 @@ public class MagicActive : MonoBehaviour
         if (allCorrect)
         {
             PlayBigRingAnimation();
+            PlayAudio(successAudioSource);
             hasActivatedSuccessfully = true;
             consecutiveFailures = 0;
 
@@ -190,6 +197,7 @@ public class MagicActive : MonoBehaviour
         else
         {
             StopSmallRingAnimations();
+            PlayAudio(failureAudioSource);
             if (!string.IsNullOrWhiteSpace(failureMonologue))
             {
                 MonologueManager.PlayMonologue(failureMonologue, failureMonologueDuration, true, false);
@@ -260,6 +268,17 @@ public class MagicActive : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void PlayAudio(AudioSource source)
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        source.Stop();
+        source.Play();
     }
 
     private void PlaySmallRingAnimations()
