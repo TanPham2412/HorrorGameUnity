@@ -7858,7 +7858,7 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 4.48, y: 3, z: 0.28}
   m_Center: {x: 0, y: 1.01, z: 0}
@@ -25207,7 +25207,7 @@ MonoBehaviour:
   keypadPanel: {fileID: 1847139308}
   keypadInput: {fileID: 1908066542}
   correctCode: 0308
-  playerMovementScript: {fileID: 0}
+  playerMovementScript: {fileID: 2096723365226007534}
   crosshair: {fileID: 1009350920}
   firstSeenLine: "M\u1ED9t c\xE1i k\xE9t s\u1EAFt. N\u1EB7ng tr\u1ECBch. C\u1EA7n
     c\u1EA3 th\u1EBB t\u1EEB... v\xE0 m\u1ED9t d\xE3y s\u1ED1. Kh\xF4ng th\u1EC3
@@ -28006,59 +28006,33 @@ MonoBehaviour:
       duration: 4
     logMonologuesToLog: 1
     preventDuplicate: 1
-    playAudioAfterViewing: 1
-    audioClip: {fileID: 8300000, guid: 1e7b0fd60e12e204ebf53001c4845a0c, type: 3}
-    audioVolume: 1
-    lockPlayerDuringMonologues: 0
-    triggerPostSequence: 0
-    postSequenceDelay: 0
-    postSequenceAudioClip: {fileID: 0}
-    postSequenceAudioVolume: 1
-    postSequenceMonologueText: 
-    postSequenceMonologueDuration: 4
-    postSequenceLogToLog: 1
-    postSequencePreventDuplicate: 1
-    objectsToActivate: []
     objectsToDeactivate: []
-    postSequenceFlagKey: 
   - displayName: OfficeA Tape
     tapeItem: 3
-    videoClip: {fileID: 32900000, guid: 1bfe1d46207e77e40996f9d71f67be5a, type: 3}
+    videoClip: {fileID: 32900000, guid: 2753e3d23fc1e394cb48e10c634b4ae6, type: 3}
     disableFlashlightUntilViewed: 0
     unlockFlashlightAfterPlayback: 0
     monologueLines:
-    - text: "...Th\xED nghi\u1EC7m? 'Ni\xEAm phong T\u1EA7ng 2'? B\u1ECDn h\u1ECD...
-        b\u1ECDn h\u1ECD \u0111\xE3 l\xE0m g\xEC \u1EDF tr\xEAn \u0111\xF3?"
+    - text: "L\xC0 N\xD3! CH\xCDNH L\xC0 TH\u1EE8 TRONG NH\xC0 V\u1EC6 SINH! N\xF3...
+        n\xF3 v\u1EEBa ph\xE1 n\xE1t l\u1ED1i l\xEAn T\u1EA7ng 2 r\u1ED3i! Ch\xFAa
+        \u01A1i!"
       duration: 4
-    - text: "H\u1ED3 s\u01A1... b\xED m\u1EADt... t\u1EA5t c\u1EA3 \u0111\u1EC1u
-        \u1EDF T\u1EA7ng 2. M\xECnh ph\u1EA3i t\xECm c\xE1ch l\xEAn \u0111\xF3. Ph\u1EA3i
-        bi\u1EBFt s\u1EF1 th\u1EADt."
+    - text: "...Kh\xF4ng, kh\xF4ng \u0111\u01B0\u1EE3c... Ph\u1EA3i b\xECnh t\u0129nh
+        l\u1EA1i. H\xEDt s\xE2u v\xE0o... Nh\u1EDB l\u1EA1i \u0111i... Trong \u0111o\u1EA1n
+        b\u0103ng, h\u1EAFn nh\u1EAFc \u0111\u1EBFn 'Th\xED nghi\u1EC7m'... 'Ni\xEAm
+        phong T\u1EA7ng 2'"
+      duration: 4
+    - text: "B\u1ECDn h\u1ECD r\u1ED1t cu\u1ED9c \u0111\xE3 l\xE0m c\xE1i qu\xE1i
+        g\xEC \u1EDF tr\xEAn \u0111\xF3? H\u1ED3 s\u01A1... b\xED m\u1EADt... t\u1EA5t
+        c\u1EA3 \u0111\u1EC1u \u1EDF tr\xEAn kia. M\xECnh kh\xF4ng th\u1EC3 quay
+        \u0111\u1EA7u n\u1EEFa. Ph\u1EA3i l\xEAn \u0111\xF3. Ph\u1EA3i bi\u1EBFt
+        s\u1EF1 th\u1EADt."
       duration: 4
     logMonologuesToLog: 1
     preventDuplicate: 1
-    playAudioAfterViewing: 0
-    audioClip: {fileID: 0}
-    audioVolume: 1
-    lockPlayerDuringMonologues: 1
-    triggerPostSequence: 1
-    postSequenceDelay: 0
-    postSequenceAudioClip: {fileID: 8300000, guid: 8ba735a1ac8d1b94488e3f6177c174fe,
-      type: 3}
-    postSequenceAudioVolume: 1
-    postSequenceMonologueText: "Ti\u1EBFng \u1EA7m! H\u01B0\u1EDBng \u0111\xF3...
-      l\xE0 s\u1EA3nh l\u1EDBn. C\xF3 chuy\u1EC7n g\xEC \u1EDF \u0111\xF3 r\u1ED3i,
-      m\xECnh ph\u1EA3i \u0111i xem."
-    postSequenceMonologueDuration: 4
-    postSequenceLogToLog: 1
-    postSequencePreventDuplicate: 1
-    objectsToActivate: []
     objectsToDeactivate:
     - {fileID: 507455114}
     - {fileID: 373606523}
-    - {fileID: 1475589589}
-    - {fileID: 1482761202}
-    postSequenceFlagKey: OfficeTapeCompleted
-  breathingAudioSource: {fileID: 0}
 --- !u!65 &1353310276
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -31045,12 +31019,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1480031698}
   m_Mesh: {fileID: 4300000, guid: cc8dc8258c356a14b9bf02775a033c9a, type: 3}
---- !u!1 &1482761202 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 13c9f1797c14f494c9149867a10e0303,
-    type: 3}
-  m_PrefabInstance: {fileID: 1895555417}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1482761203 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 13c9f1797c14f494c9149867a10e0303,
@@ -39458,6 +39426,12 @@ MonoBehaviour:
   doorCloseDelaySeconds: 2
   doorKnockDelaySeconds: 5
   doorKnockAudioSource: {fileID: 0}
+  doorKnockMonologue: "M\xECnh ph\u1EA3i nhanh l\xEAn, n\u1EBFu kh\xF4ng h\u1EAFn
+    ta s\u1EBD v\xE0o \u0111\u01B0\u1EE3c."
+  doorKnockMonologueDuration: 3
+  doorKnockMonologueDelayAfterSound: 1
+  doorKnockMonologueAddsToLog: 1
+  doorKnockMonologueInterruptsQueue: 1
 --- !u!65 &1781359039
 BoxCollider:
   m_ObjectHideFlags: 0

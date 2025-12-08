@@ -17,6 +17,11 @@ public class MusicTrigger : MonoBehaviour
     [SerializeField] private float doorCloseDelaySeconds = 2f;
     [SerializeField] private float doorKnockDelaySeconds = 5f;
     [SerializeField] private AudioSource doorKnockAudioSource;
+    [SerializeField] [TextArea] private string doorKnockMonologue = "Mình phải nhanh lên, nếu không hắn ta sẽ vào được.";
+    [SerializeField] private float doorKnockMonologueDuration = 3f;
+    [SerializeField] private float doorKnockMonologueDelayAfterSound = 1f;
+    [SerializeField] private bool doorKnockMonologueAddsToLog = true;
+    [SerializeField] private bool doorKnockMonologueInterruptsQueue = true;
 
     private Collider triggerCollider;
     private bool hasTriggered;
@@ -102,13 +107,10 @@ public class MusicTrigger : MonoBehaviour
         CloseAndDisableDoor();
         doorCloseRoutine = null;
 
-        if (doorKnockAudioSource != null)
-        {
-            doorKnockRoutine = StartCoroutine(PlayDoorKnockAfterDelay());
-        }
+        doorKnockRoutine = StartCoroutine(HandleDoorKnockSequence());
     }
 
-    private System.Collections.IEnumerator PlayDoorKnockAfterDelay()
+    private System.Collections.IEnumerator HandleDoorKnockSequence()
     {
         if (doorKnockDelaySeconds > 0f)
         {
@@ -116,6 +118,21 @@ public class MusicTrigger : MonoBehaviour
         }
 
         PlayDoorKnockAudio();
+
+        if (!string.IsNullOrWhiteSpace(doorKnockMonologue))
+        {
+            if (doorKnockMonologueDelayAfterSound > 0f)
+            {
+                yield return new WaitForSeconds(doorKnockMonologueDelayAfterSound);
+            }
+
+            MonologueManager.PlayMonologue(
+                doorKnockMonologue,
+                doorKnockMonologueDuration,
+                doorKnockMonologueAddsToLog,
+                doorKnockMonologueInterruptsQueue);
+        }
+
         doorKnockRoutine = null;
     }
 
