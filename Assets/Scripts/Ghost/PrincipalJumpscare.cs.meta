@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 5a037c7108932294b8eba8e40f13bc86
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - jumpscareClip: {fileID: 32900000, guid: 0c1cae73e5df66d44a6dd4161e6b37e1, type: 3}
+  - videoPlayer: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
