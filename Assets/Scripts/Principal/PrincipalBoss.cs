@@ -40,6 +40,10 @@ public class PrincipalBoss : MonoBehaviour
     public float searchDuration = 4.0f;
     public float searchTurnSpeed = 120f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource chaseAudioSource;
+    [SerializeField] private bool loopChaseAudio = true;
+
     // Private vars
     private NavMeshAgent agent;
     private Transform player;
@@ -49,6 +53,7 @@ public class PrincipalBoss : MonoBehaviour
     private Vector3 lastKnownPosition;
     private bool hasLastKnownPosition = false;
     private string currentAnimState = "";
+    private bool chaseAudioPlaying;
 
     private enum State { Patrolling, Chasing, Attacking, Searching }
     [SerializeField] private State currentState;
@@ -96,6 +101,7 @@ public class PrincipalBoss : MonoBehaviour
                     hasLastKnownPosition = true;
                     lastKnownPosition = player.position;
                     agent.SetDestination(player.position);
+                    StartChaseAudio();
                 }
                 else PatrolLogic();
                 break;
@@ -212,11 +218,13 @@ public class PrincipalBoss : MonoBehaviour
                     currentState = State.Searching;
                     searchTimer = 0f;
                     agent.isStopped = true;
+                    StopChaseAudio();
                 }
             }
             else
             {
                 currentState = State.Patrolling;
+                StopChaseAudio();
                 MoveToNextWaypoint();
             }
         }
@@ -228,6 +236,7 @@ public class PrincipalBoss : MonoBehaviour
         {
             currentState = State.Chasing;
             agent.isStopped = false;
+            StartChaseAudio();
             return;
         }
 
@@ -237,6 +246,7 @@ public class PrincipalBoss : MonoBehaviour
         {
             currentState = State.Patrolling;
             agent.isStopped = false;
+            StopChaseAudio();
             MoveToNextWaypoint();
         }
     }
@@ -247,6 +257,7 @@ public class PrincipalBoss : MonoBehaviour
 
         currentState = State.Attacking;
         agent.isStopped = true;
+        StopChaseAudio();
 
         if (principalJumpscare != null)
             principalJumpscare.TriggerPrincipalJumpscare();
@@ -277,6 +288,21 @@ public class PrincipalBoss : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void StartChaseAudio()
+    {
+        if (chaseAudioSource == null || chaseAudioPlaying) return;
+        chaseAudioSource.loop = loopChaseAudio;
+        chaseAudioSource.Play();
+        chaseAudioPlaying = true;
+    }
+
+    private void StopChaseAudio()
+    {
+        if (chaseAudioSource == null || !chaseAudioPlaying) return;
+        chaseAudioSource.Stop();
+        chaseAudioPlaying = false;
     }
 
     public void ActivatePrincipal()
