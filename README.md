@@ -10,7 +10,6 @@ Một dự án game kinh dị góc nhìn thứ nhất được xây dựng bằn
 3. [Các hệ thống chính](#các-hệ-thống-chính)
 4. [Cách chạy dự án](#cách-chạy-dự-án)
 5. [Quy ước & script đáng chú ý](#quy-ước--script-đáng-chú-ý)
-6. [Đóng góp & giấy phép](#đóng-góp--giấy-phép)
 
 ---
 
