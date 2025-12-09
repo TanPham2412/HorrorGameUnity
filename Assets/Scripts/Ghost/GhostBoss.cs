@@ -24,9 +24,15 @@ public class GhostBoss : MonoBehaviour
     public float chaseSpeed = 5f;
     public float eyeOffset = 0.0f;
     public LayerMask detectionLayer;
+    [Header("Cry Range")]
+    public float cryRange = 20f;
 
     [Header("Attack Settings")]
     public float attackRange = 2.0f;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource ghostCrySource;
+    [SerializeField] private AudioSource ghostScreamSource;
 
     // Các biến nội bộ
     private NavMeshAgent agent;
@@ -46,6 +52,8 @@ public class GhostBoss : MonoBehaviour
 
     private enum State { Patrolling, Chasing, Attacking }
     [SerializeField] private State currentState;
+    private bool cryPlaying;
+    private bool screamPlaying;
 
     void Start()
     {
@@ -89,6 +97,8 @@ public class GhostBoss : MonoBehaviour
 
         bool canSee = CheckFieldOfView();
 
+        HandleVisionAudio(canSee);
+
         switch (currentState)
         {
             case State.Patrolling:
@@ -98,6 +108,8 @@ public class GhostBoss : MonoBehaviour
                     currentState = State.Chasing;
                     hasLastKnownPosition = true;
                     lastKnownPosition = player.position;
+                    StartScreamAudio();
+                    StopCryAudio();
                 }
                 else
                 {
@@ -124,8 +136,11 @@ public class GhostBoss : MonoBehaviour
         // 1. Nếu nhìn thấy Player
         if (canSee)
         {
+            StopCryAudio();
+            StartScreamAudio();
             // Cập nhật vị trí hiện tại làm vị trí cuối cùng
             lastKnownPosition = player.position;
+
             hasLastKnownPosition = true;
 
             // Đuổi theo vị trí thực
@@ -156,6 +171,11 @@ public class GhostBoss : MonoBehaviour
                     hasLastKnownPosition = false;
                     currentState = State.Patrolling;
                     MoveToNextWaypoint();
+                    StopScreamAudio();
+                    if (IsPlayerWithinCryRange())
+                    {
+                        StartCryAudio();
+                    }
                     Debug.Log("ZME: Player escaped via hiding. Returning to Patrol.");
                 }
             }
@@ -163,8 +183,74 @@ public class GhostBoss : MonoBehaviour
             {
                 // Fallback nếu lỗi
                 currentState = State.Patrolling;
+                StopScreamAudio();
+                if (IsPlayerWithinCryRange())
+                {
+                    StartCryAudio();
+                }
             }
         }
+    }
+
+    private void HandleVisionAudio(bool canSee)
+    {
+        if (currentState == State.Attacking) return;
+
+        bool inCryRange = IsPlayerWithinCryRange();
+
+        if (!inCryRange)
+        {
+            StopCryAudio();
+            return;
+        }
+
+        if (currentState == State.Patrolling && !canSee)
+        {
+            StartCryAudio();
+            StopScreamAudio();
+        }
+    }
+
+    private bool IsPlayerWithinVisionRangeOnly()
+    {
+        if (player == null) return false;
+        return Vector3.Distance(transform.position, player.position) <= visionRange;
+    }
+
+    private bool IsPlayerWithinCryRange()
+    {
+        if (player == null) return false;
+        return Vector3.Distance(transform.position, player.position) <= cryRange;
+    }
+
+    private void StartCryAudio()
+    {
+        if (ghostCrySource == null || cryPlaying) return;
+        ghostCrySource.loop = true;
+        ghostCrySource.Play();
+        cryPlaying = true;
+    }
+
+    private void StopCryAudio()
+    {
+        if (ghostCrySource == null || !cryPlaying) return;
+        ghostCrySource.Stop();
+        cryPlaying = false;
+    }
+
+    private void StartScreamAudio()
+    {
+        if (ghostScreamSource == null || screamPlaying) return;
+        ghostScreamSource.loop = true;
+        ghostScreamSource.Play();
+        screamPlaying = true;
+    }
+
+    private void StopScreamAudio()
+    {
+        if (ghostScreamSource == null || !screamPlaying) return;
+        ghostScreamSource.Stop();
+        screamPlaying = false;
     }
 
     // ... (Giữ nguyên các hàm Attack, ActivateGhost, PatrolLogic cũ) ...
@@ -226,6 +312,8 @@ public class GhostBoss : MonoBehaviour
         currentState = State.Attacking;
         if (agent.isOnNavMesh) agent.isStopped = true;
         if (legacyAnimation != null) legacyAnimation.Stop();
+        StopScreamAudio();
+        StopCryAudio();
         if (JumpscareManager.instance != null) JumpscareManager.instance.TriggerJumpscare();
     }
 

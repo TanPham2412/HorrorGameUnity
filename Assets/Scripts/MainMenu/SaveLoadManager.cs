@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class SaveLoadManager : MonoBehaviour
@@ -54,5 +55,22 @@ public class SaveLoadManager : MonoBehaviour
     private string GetSavePath(int slotNumber)
     {
         return Path.Combine(Application.persistentDataPath, "save_" + slotNumber + ".json");
+    }
+    public List<string> currentSessionActions = new List<string>();
+
+    // Hàm gọi khi nhặt đồ/mở cửa... để ghi nhớ
+    public void MarkActionAsCompleted(string actionID)
+    {
+        if (!currentSessionActions.Contains(actionID))
+        {
+            currentSessionActions.Add(actionID);
+            Debug.Log("ZME: Đã ghi nhớ hành động: " + actionID);
+        }
+    }
+
+    // Hàm kiểm tra xem vật thể này đã bị tác động chưa (để xóa đi khi load)
+    public bool IsActionCompleted(string actionID)
+    {
+        return currentSessionActions.Contains(actionID);
     }
 }

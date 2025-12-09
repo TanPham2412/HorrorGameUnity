@@ -7,7 +7,7 @@ public class MainMenuManager : MonoBehaviour
 {
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject loadGamePanel;
-    [SerializeField] private string sceneToLoad = "Scene_TruongHoc_Dem1";
+    [SerializeField] private string sceneToLoad = "SampleScene";
     [SerializeField] private AudioMixer mainMixer;
     [SerializeField] private Slider volumeSlider;
 
@@ -67,5 +67,21 @@ public class MainMenuManager : MonoBehaviour
     {
         UnityEngine.Debug.Log("Bạn đã bấm Thoát!");
         UnityEngine.Application.Quit();
+    }
+
+    public void OnLoadSlotButton(int slotIndex)
+    {
+        if (SaveLoadManager.instance == null)
+        {
+            Debug.LogError("Lỗi: Không tìm thấy SaveLoadManager!");
+            return;
+        }
+
+        SaveLoadManager.instance.isLoadingGame = true;
+
+        SaveLoadManager.instance.currentSlotToLoad = slotIndex;
+
+        Debug.Log($"Đang load Slot {slotIndex}, chuyển sang scene: {sceneToLoad}");
+        SceneManager.LoadSceneAsync(sceneToLoad);
     }
 }

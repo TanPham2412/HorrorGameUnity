@@ -52,6 +52,8 @@ public class SaveSlotButton : MonoBehaviour
 
         data.sceneName = SceneManager.GetActiveScene().name;
 
+        data.completedActions = SaveLoadManager.instance.currentSessionActions;
+
         SaveLoadManager.instance.SaveGame(slotNumber, data);
 
         UpdateVisuals();

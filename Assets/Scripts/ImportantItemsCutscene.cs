@@ -23,6 +23,7 @@ public class ImportantItemsCutscene : MonoBehaviour
 
     [Header("Optional Signals")]
     public GameObject[] objectsToDisableDuringCutscene;
+    [SerializeField] private GameObject ghostObjectToHideAfterCutscene;
 
     [Header("Post Cutscene Monologue")]
     public float defaultPostCutsceneMonologueDuration = 5f;
@@ -90,6 +91,11 @@ public class ImportantItemsCutscene : MonoBehaviour
         foreach (var obj in objectsToDisableDuringCutscene)
         {
             if (obj != null) obj.SetActive(true);
+        }
+
+        if (ghostObjectToHideAfterCutscene != null)
+        {
+            ghostObjectToHideAfterCutscene.SetActive(false);
         }
 
         if (postCutsceneMonologueLines != null && postCutsceneMonologueLines.Count > 0)

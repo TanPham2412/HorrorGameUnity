@@ -29,6 +29,8 @@ public class MusicTrigger : MonoBehaviour
     private Coroutine pendingPlayRoutine;
     private Coroutine doorCloseRoutine;
     private Coroutine doorKnockRoutine;
+    [Header("Principal Handling")]
+    [SerializeField] private GameObject principalObjectToDisable;
 
     private void Reset()
     {
@@ -67,6 +69,7 @@ public class MusicTrigger : MonoBehaviour
 
         pendingPlayRoutine = StartCoroutine(PlayMachineRoomMusicAfterDelay());
         doorCloseRoutine = StartCoroutine(CloseDoorAfterDelay());
+        DisablePrincipal();
 
         if (disableColliderAfterTrigger && triggerCollider != null)
         {
@@ -216,5 +219,11 @@ public class MusicTrigger : MonoBehaviour
         }
 
         ActiveSources.Clear();
+    }
+
+    private void DisablePrincipal()
+    {
+        if (principalObjectToDisable == null) return;
+        principalObjectToDisable.SetActive(false);
     }
 }
